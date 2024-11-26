@@ -1,0 +1,78 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "pice_dll",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll-Debug-dcaf74b5788d7ae73e8f.json",
+					"name" : "pice_dll",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll_autogen-Debug-823f82c77479370b9073.json",
+					"name" : "pice_dll_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll_autogen_timestamp_deps-Debug-8a40d6ad9cac9afd9bf1.json",
+					"name" : "pice_dll_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MinGW_64_bit-Debug",
+		"source" : "G:/Qt/learning/pice_dll"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

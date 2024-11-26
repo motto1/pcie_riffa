@@ -1,0 +1,105 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Release-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "pice_dll",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll-Release-463d2a5cf6ab10dc7b83.json",
+					"name" : "pice_dll",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll_autogen-Release-d56d1f2cf09e1957d1e4.json",
+					"name" : "pice_dll_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "pice_dll_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-pice_dll_autogen_timestamp_deps-Release-8a40d6ad9cac9afd9bf1.json",
+					"name" : "pice_dll_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_pice_dll::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_pice_dll-Release-2c2a7cc4fbb6c28f13b0.json",
+					"name" : "test_pice_dll",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_pice_dll_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_pice_dll_autogen-Release-d983b332c3fb5dfafd32.json",
+					"name" : "test_pice_dll_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_pice_dll_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_pice_dll_autogen_timestamp_deps-Release-aa3c79967268c7015508.json",
+					"name" : "test_pice_dll_autogen_timestamp_deps",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MSVC2019_64bit-Release",
+		"source" : "G:/Qt/learning/pice_dll"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
