@@ -153,12 +153,12 @@ QPair<bool, qint64> Pice_dll::fpga_send_recv()
         return qMakePair(false, 0);
     }
 
-    // // 等待指定时间
-    // QElapsedTimer waitTimer;
-    // waitTimer.start();
-    // while(waitTimer.nsecsElapsed() < 10000 * input_value - 4 * 10000) {
-    //     QThread::yieldCurrentThread();
-    // }
+    // 等待指定时间
+    QElapsedTimer waitTimer;
+    waitTimer.start();
+    while(waitTimer.nsecsElapsed() < 10000 * input_value - 4 * 10000) {
+        QThread::yieldCurrentThread();
+    }
 
     // 更新计时
     qint64 currentElapsedMicros = m_loopTimer.nsecsElapsed() / 1000;
