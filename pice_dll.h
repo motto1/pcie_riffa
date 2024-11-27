@@ -70,11 +70,27 @@ public:
     // 声明FifoThread为友元类，使其能访问私有成员
     friend class FifoThread;
 
+    // 添加日志控制函数
+    static void enableRiffaLog(bool enable) { riffa_log_enabled = enable; }
+    static bool isRiffaLogEnabled() { return riffa_log_enabled; }
+    static void enablePiceDllLog(bool enable) { pice_dll_log_enabled = enable; }
+    static bool isPiceDllLogEnabled() { return pice_dll_log_enabled; }
+
+    // 添加版本信息相关函数
+    struct VersionInfo {
+        QString hardwareVersion;
+        QString softwareVersion;
+    };
+    
+    VersionInfo getVersionInfo();
+
 signals:
     void logGenerated(const QString& message);
 
 private:
     static Pice_dll* instance;  // 添加静态成员变量
+    static bool riffa_log_enabled;  // 添加静态控制变量
+    static bool pice_dll_log_enabled;  // PICE DLL日志控制
 
     // FPGA相关变量
     fpga_t* fpga;
@@ -106,6 +122,10 @@ private:
     size_t next_read_pos;           // 下一个要读取的位置
     size_t last_package_size;       // 最后一次写入的包大小
     bool has_new_data;              // 是否有新数据标志
+
+    int package_counter;  // 包计数器
+    static const int MAX_PACKAGE_COUNT = 5000;  // 最大包数限制
+    int read_count;  // 添加读取计数器
 };
 
 #endif // PICE_DLL_H

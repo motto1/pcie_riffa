@@ -111,6 +111,6 @@ G:/Qt/learning/pice_dll/pice_dll.h
  mdp:G:/Qt/learning/pice_dll/riffa.h
 G:/Qt/learning/pice_dll/pice_dll_global.h
 G:/Qt/learning/pice_dll/riffa.h
-G:/Qt/learning/pice_dll/riffa.cpp
 G:/Qt/learning/pice_dll/riffa_driver.h
+G:/Qt/learning/pice_dll/riffa.cpp
 G:/Qt/learning/pice_dll/pice_dll.cpp

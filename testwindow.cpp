@@ -107,6 +107,13 @@ void TestWindow::on_btnOpenPcie_clicked()
     if(pcie->openPcie() == 0) {
         appendLog("PCIE设备打开成功");
         ui->btnStartFifo->setEnabled(true);
+        
+        // 获取并显示版本信息
+        Pice_dll::VersionInfo version = pcie->getVersionInfo();
+        appendLog(QString("设备版本信息:"));
+        appendLog(QString("  硬件版本: %1").arg(version.hardwareVersion));
+        appendLog(QString("  软件版本: %1").arg(version.softwareVersion));
+        
     } else {
         appendLog("打开PCIE设备失败: " + pcie->getLastError());
     }
@@ -130,7 +137,9 @@ void TestWindow::on_btnClosePcie_clicked()
 
 void TestWindow::onLogGenerated(const QString& message)
 {
-    writeToLogFile("RIFFA: " + message);
+    // 日志已经在handleLog中添加了前缀，直接写入和显示
+    writeToLogFile(message);
+    ui->textLog->append(message);
 }
 
 void TestWindow::onWorkerLogMessage(const QString& message)
@@ -157,34 +166,31 @@ void FifoReaderThread::run()
     timer.start();
     
     while(m_running) {
-        // 每10微秒执行一次读取
-        if(timer.nsecsElapsed() >= 10000) {  // 10000纳秒 = 10微秒
-            timer.restart();  // 重置计时器
+        // 读取数据，设置较短的超时时间（100微秒）
+        if(m_pcie->fpga_read(readBuffer, 10000)) {
+            readCount++;
             
-            // 读取数据
-            if(m_pcie->fpga_read(readBuffer)) {
-                readCount++;
-                
-                // 每10000次打印一次状态
-                if(readCount % 10000 == 0) {
-                    emit readCompleted(readCount, timer.nsecsElapsed() / 1000);  // 转换为微秒
-                    emit logMessage(QString("已完成 %1 次读取，当前位置: %2 MB，FIFO写入位置: %3 MB")
-                        .arg(readCount)
-                        .arg(m_pcie->getNextReadPos() / (1024 * 1024))
-                        .arg(m_pcie->getCurrentFifoPos() / (1024 * 1024)));
-                }
-            } else {
-                if(m_running) {  // 只在非停止状态下输出错误
-                    // 如果是超时错误，不输出日志，继续尝试
-                    if(m_pcie->getLastError() != "读取超时") {
-                        emit logMessage("读取失败: " + m_pcie->getLastError());
-                    }
+            // 每10000次打印一次状态
+            if(readCount % 10000 == 0) {
+                emit readCompleted(readCount, timer.nsecsElapsed() / 1000);  // 转换为微秒
+                QString logMsg = QString("已完成 %1 次读取，当前位置: %2 MB，FIFO写入位置: %3 MB")
+                    .arg(readCount)
+                    .arg(m_pcie->getNextReadPos() / (1024 * 1024))
+                    .arg(m_pcie->getCurrentFifoPos() / (1024 * 1024));
+                emit logMessage(logMsg);
+                qDebug() << logMsg; // 添加控制台输出
+                timer.restart();  // 重置计时器
+            }
+        } else {
+            if(m_running) {  // 只在非停止状态下输出错误
+                // 如果是超时错误，不输出日志，继续尝试
+                if(m_pcie->getLastError() != "读取超时") {
+                    emit logMessage("读取失败: " + m_pcie->getLastError());
                 }
             }
         }
-        
-        // 等待10微秒
-        QThread::usleep(10);  // 10微秒延时
+        // // 精确控制10微秒的延时
+        // QThread::usleep(10);  // 10微秒延时
     }
     
     delete[] readBuffer;
@@ -200,27 +206,39 @@ void TestWindow::on_btnStartFifo_clicked()
         return;
     }
     
-    // 启动FIFO写入
+    // 根据复选框状态设置日志
+    Pice_dll::enableRiffaLog(ui->checkBoxRiffaLog->isChecked());
+    Pice_dll::enablePiceDllLog(ui->checkBoxPiceDllLog->isChecked());
+    
+    // 先创建并启动读取线程
+    if(fifoReaderThread) {
+        fifoReaderThread->stop();
+        fifoReaderThread->wait();
+        delete fifoReaderThread;
+    }
+    
+    fifoReaderThread = new FifoReaderThread(pcie, this);
+    connect(fifoReaderThread, &FifoReaderThread::logMessage, 
+            this, &TestWindow::onWorkerLogMessage);
+    connect(fifoReaderThread, &FifoReaderThread::readCompleted,
+            this, &TestWindow::onFifoReadCompleted);
+    
+    // 启动读取线程
+    fifoReaderThread->start();
+    
+    // 然后启动FIFO写入
     appendLog(QString("开始FIFO操作，输入值: %1").arg(value));
     if(pcie->fpga_fifo(value)) {
         appendLog("FIFO写入线程已启动");
-        
-        // 创建并启动读取线程
+    } else {
+        appendLog("FIFO操作启动失败: " + pcie->getLastError());
+        // 如果启动失败，停止读取线程
         if(fifoReaderThread) {
             fifoReaderThread->stop();
             fifoReaderThread->wait();
             delete fifoReaderThread;
+            fifoReaderThread = nullptr;
         }
-        
-        fifoReaderThread = new FifoReaderThread(pcie, this);
-        connect(fifoReaderThread, &FifoReaderThread::logMessage, 
-                this, &TestWindow::onWorkerLogMessage);
-        connect(fifoReaderThread, &FifoReaderThread::readCompleted,
-                this, &TestWindow::onFifoReadCompleted);
-        
-        fifoReaderThread->start();
-    } else {
-        appendLog("FIFO操作启动失败: " + pcie->getLastError());
     }
 }
 

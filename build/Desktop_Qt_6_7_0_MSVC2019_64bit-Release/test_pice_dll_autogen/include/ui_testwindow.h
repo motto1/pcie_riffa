@@ -11,6 +11,7 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
@@ -33,6 +34,9 @@ public:
     QLineEdit *lineEditValue;
     QPushButton *btnStartFifo;
     QPushButton *btnClosePcie;
+    QHBoxLayout *horizontalLayout_2;
+    QCheckBox *checkBoxRiffaLog;
+    QCheckBox *checkBoxPiceDllLog;
     QTextEdit *textLog;
     QStatusBar *statusbar;
 
@@ -76,6 +80,23 @@ public:
 
         verticalLayout->addLayout(horizontalLayout);
 
+        horizontalLayout_2 = new QHBoxLayout();
+        horizontalLayout_2->setObjectName("horizontalLayout_2");
+        checkBoxRiffaLog = new QCheckBox(centralwidget);
+        checkBoxRiffaLog->setObjectName("checkBoxRiffaLog");
+        checkBoxRiffaLog->setChecked(false);
+
+        horizontalLayout_2->addWidget(checkBoxRiffaLog);
+
+        checkBoxPiceDllLog = new QCheckBox(centralwidget);
+        checkBoxPiceDllLog->setObjectName("checkBoxPiceDllLog");
+        checkBoxPiceDllLog->setChecked(true);
+
+        horizontalLayout_2->addWidget(checkBoxPiceDllLog);
+
+
+        verticalLayout->addLayout(horizontalLayout_2);
+
         textLog = new QTextEdit(centralwidget);
         textLog->setObjectName("textLog");
         textLog->setReadOnly(true);
@@ -100,6 +121,8 @@ public:
         lineEditValue->setPlaceholderText(QCoreApplication::translate("TestWindow", "\350\276\223\345\205\245\345\200\274", nullptr));
         btnStartFifo->setText(QCoreApplication::translate("TestWindow", "\345\220\257\345\212\250FIFO", nullptr));
         btnClosePcie->setText(QCoreApplication::translate("TestWindow", "\345\205\263\351\227\255\350\256\276\345\244\207", nullptr));
+        checkBoxRiffaLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250RIFFA\346\227\245\345\277\227", nullptr));
+        checkBoxPiceDllLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250PICE DLL\346\227\245\345\277\227", nullptr));
     } // retranslateUi
 
 };

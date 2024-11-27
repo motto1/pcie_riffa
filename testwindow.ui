@@ -58,6 +58,30 @@
      </layout>
     </item>
     <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QCheckBox" name="checkBoxRiffaLog">
+        <property name="text">
+         <string>启用RIFFA日志</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkBoxPiceDllLog">
+        <property name="text">
+         <string>启用PICE DLL日志</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
      <widget class="QTextEdit" name="textLog">
       <property name="readOnly">
        <bool>true</bool>
