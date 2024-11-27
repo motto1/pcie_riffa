@@ -39,22 +39,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="btnPrepareSend">
+       <widget class="QPushButton" name="btnStartFifo">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>准备发送</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnSendRecv">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>发送接收</string>
+         <string>启动FIFO</string>
         </property>
        </widget>
       </item>

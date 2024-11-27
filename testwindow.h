@@ -10,25 +10,25 @@
 #include <QThread>
 #include "pice_dll.h"
 
-// 添加工作线程类
-class WorkerThread : public QThread
+// 添加FIFO读取线程类
+class FifoReaderThread : public QThread
 {
     Q_OBJECT
 public:
-    WorkerThread(Pice_dll* pcie, unsigned int* buffer, QObject* parent = nullptr);
+    FifoReaderThread(Pice_dll* pcie, QObject* parent = nullptr);
     void stop();
 
 signals:
     void logMessage(const QString& message);
-    void operationCompleted(int count, qint64 time);
+    void readCompleted(qint64 count, qint64 time);
 
 protected:
     void run() override;
 
 private:
     Pice_dll* m_pcie;
-    unsigned int* m_buffer;
     bool m_running;
+    static const int BUFFER_SIZE = 4096 * 4;  // 接收缓冲区大小
 };
 
 namespace Ui {
@@ -42,16 +42,16 @@ class TestWindow : public QMainWindow
 public:
     explicit TestWindow(QWidget *parent = nullptr);
     ~TestWindow();
+    static int currentLoopCount;
 
 private slots:
     void on_btnCheckPcie_clicked();
     void on_btnOpenPcie_clicked();
-    void on_btnPrepareSend_clicked();
-    void on_btnSendRecv_clicked();
     void on_btnClosePcie_clicked();
     void onLogGenerated(const QString& message);
     void onWorkerLogMessage(const QString& message);
-    void onOperationCompleted(int count, qint64 time);
+    void on_btnStartFifo_clicked();    // FIFO操作按钮
+    void onFifoReadCompleted(qint64 count, qint64 time);
 
 private:
     Ui::TestWindow *ui;
@@ -59,7 +59,7 @@ private:
     unsigned int* receiveBuffer;
     QFile* logFile;
     QTextStream* logStream;
-    WorkerThread* workerThread;
+    FifoReaderThread* fifoReaderThread;  // 只保留FIFO读取线程
     
     void appendLog(const QString& text);
     void writeToLogFile(const QString& text);

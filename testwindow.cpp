@@ -4,6 +4,9 @@
 #include <QDir>
 #include <QRegularExpression>
 
+// 初始化静态成员变量
+int TestWindow::currentLoopCount = 0;
+
 TestWindow::TestWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TestWindow),
@@ -11,7 +14,7 @@ TestWindow::TestWindow(QWidget *parent) :
     receiveBuffer(nullptr),
     logFile(nullptr),
     logStream(nullptr),
-    workerThread(nullptr)
+    fifoReaderThread(nullptr)
 {
     ui->setupUi(this);
     setWindowTitle("PCIE DLL 测试程序");
@@ -25,10 +28,10 @@ TestWindow::TestWindow(QWidget *parent) :
 
 TestWindow::~TestWindow()
 {
-    if(workerThread) {
-        workerThread->stop();
-        workerThread->wait();
-        delete workerThread;
+    if(fifoReaderThread) {
+        fifoReaderThread->stop();
+        fifoReaderThread->wait();
+        delete fifoReaderThread;
     }
     closeLogFile();
     delete ui;
@@ -99,22 +102,96 @@ void TestWindow::on_btnCheckPcie_clicked()
 }
 
 void TestWindow::on_btnOpenPcie_clicked()
-{
-    if(receiveBuffer) {
-        delete[] receiveBuffer;
-    }
-    receiveBuffer = new unsigned int[4096 * 4];
-    
+{    
     appendLog("正在打开PCIE设备...");
-    if(pcie->openPcie(receiveBuffer) == 0) {
+    if(pcie->openPcie() == 0) {
         appendLog("PCIE设备打开成功");
-        ui->btnPrepareSend->setEnabled(true);
+        ui->btnStartFifo->setEnabled(true);
     } else {
         appendLog("打开PCIE设备失败: " + pcie->getLastError());
     }
 }
 
-void TestWindow::on_btnPrepareSend_clicked()
+void TestWindow::on_btnClosePcie_clicked()
+{
+    appendLog("正在关闭PCIE设备...");
+    
+    if(fifoReaderThread) {
+        fifoReaderThread->stop();
+        fifoReaderThread->wait();
+        delete fifoReaderThread;
+        fifoReaderThread = nullptr;
+    }
+    
+    pcie->closePcie();
+    ui->btnStartFifo->setEnabled(false);
+    appendLog("PCIE设备已关闭");
+}
+
+void TestWindow::onLogGenerated(const QString& message)
+{
+    writeToLogFile("RIFFA: " + message);
+}
+
+void TestWindow::onWorkerLogMessage(const QString& message)
+{
+    appendLog(message);
+}
+
+// FIFO读取线程实现
+FifoReaderThread::FifoReaderThread(Pice_dll* pcie, QObject* parent)
+    : QThread(parent), m_pcie(pcie), m_running(true)
+{
+}
+
+void FifoReaderThread::stop()
+{
+    m_running = false;
+}
+
+void FifoReaderThread::run()
+{
+    unsigned int* readBuffer = new unsigned int[BUFFER_SIZE];
+    qint64 readCount = 0;
+    QElapsedTimer timer;
+    timer.start();
+    
+    while(m_running) {
+        // 每10微秒执行一次读取
+        if(timer.nsecsElapsed() >= 10000) {  // 10000纳秒 = 10微秒
+            timer.restart();  // 重置计时器
+            
+            // 读取数据
+            if(m_pcie->fpga_read(readBuffer)) {
+                readCount++;
+                
+                // 每10000次打印一次状态
+                if(readCount % 10000 == 0) {
+                    emit readCompleted(readCount, timer.nsecsElapsed() / 1000);  // 转换为微秒
+                    emit logMessage(QString("已完成 %1 次读取，当前位置: %2 MB，FIFO写入位置: %3 MB")
+                        .arg(readCount)
+                        .arg(m_pcie->getNextReadPos() / (1024 * 1024))
+                        .arg(m_pcie->getCurrentFifoPos() / (1024 * 1024)));
+                }
+            } else {
+                if(m_running) {  // 只在非停止状态下输出错误
+                    // 如果是超时错误，不输出日志，继续尝试
+                    if(m_pcie->getLastError() != "读取超时") {
+                        emit logMessage("读取失败: " + m_pcie->getLastError());
+                    }
+                }
+            }
+        }
+        
+        // 等待10微秒
+        QThread::usleep(10);  // 10微秒延时
+    }
+    
+    delete[] readBuffer;
+    emit logMessage("FIFO读取线程结束");
+}
+
+void TestWindow::on_btnStartFifo_clicked()
 {
     bool ok;
     int value = ui->lineEditValue->text().toInt(&ok);
@@ -123,174 +200,33 @@ void TestWindow::on_btnPrepareSend_clicked()
         return;
     }
     
-    appendLog(QString("准备发送数据，输入值: %1").arg(value));
-    if(pcie->prepare_fpga_send(value)) {
-        appendLog("数据准备完成");
-        ui->btnSendRecv->setEnabled(true);
+    // 启动FIFO写入
+    appendLog(QString("开始FIFO操作，输入值: %1").arg(value));
+    if(pcie->fpga_fifo(value)) {
+        appendLog("FIFO写入线程已启动");
         
-        // 创建并启动工作线程
-        if(workerThread) {
-            workerThread->stop();
-            workerThread->wait();
-            delete workerThread;
+        // 创建并启动读取线程
+        if(fifoReaderThread) {
+            fifoReaderThread->stop();
+            fifoReaderThread->wait();
+            delete fifoReaderThread;
         }
         
-        if(receiveBuffer) {
-            delete[] receiveBuffer;
-        }
-        receiveBuffer = new unsigned int[4096 * 4];
+        fifoReaderThread = new FifoReaderThread(pcie, this);
+        connect(fifoReaderThread, &FifoReaderThread::logMessage, 
+                this, &TestWindow::onWorkerLogMessage);
+        connect(fifoReaderThread, &FifoReaderThread::readCompleted,
+                this, &TestWindow::onFifoReadCompleted);
         
-        workerThread = new WorkerThread(pcie, receiveBuffer, this);
-        connect(workerThread, &WorkerThread::logMessage, this, &TestWindow::onWorkerLogMessage);
-        connect(workerThread, &WorkerThread::operationCompleted, this, &TestWindow::onOperationCompleted);
-        
-        appendLog("开始循环发送接收数据...");
-        workerThread->start();
-        
+        fifoReaderThread->start();
     } else {
-        appendLog("数据准备失败: " + pcie->getLastError());
+        appendLog("FIFO操作启动失败: " + pcie->getLastError());
     }
 }
 
-void TestWindow::on_btnSendRecv_clicked()
+void TestWindow::onFifoReadCompleted(qint64 count, qint64 time)
 {
-    appendLog("开始循环发送接收数据...");
-    int loopCount = 0;
-    
-    while(true) {
-        QPair<bool, qint64> result = pcie->fpga_send_recv();
-        if(!result.first) {
-            appendLog("操作失败: " + pcie->getLastError());
-            break;
-        }
-        
-        loopCount++;
-        
-        // 每10000次打印一次执行信息
-        if(loopCount % 10000 == 0) {
-            appendLog(QString("第 %1 次执行完成，耗时: %2 微秒")
-                .arg(loopCount)
-                .arg(result.second));
-            
-            // 处理Qt事件，确保界面响应
-            QApplication::processEvents();
-        }
-        
-        // 检查是否需要停止循环
-        if(!pcie->isConnected()) {
-            appendLog("设备已断开，停止循环");
-            break;
-        }
-    }
-    
-    appendLog("循环执行结束");
-}
-
-void TestWindow::on_btnClosePcie_clicked()
-{
-    appendLog("正在关闭PCIE设备...");
-    
-    if(workerThread) {
-        workerThread->stop();
-        workerThread->wait();
-        delete workerThread;
-        workerThread = nullptr;
-    }
-    
-    pcie->closePcie();
-    ui->btnPrepareSend->setEnabled(false);
-    ui->btnSendRecv->setEnabled(false);
-    appendLog("PCIE设备已关闭");
-}
-
-void TestWindow::onLogGenerated(const QString& message)
-{
-    // 获取当前的循环次数（从消息中提取）
-    static int currentLoop = 0;
-    if (message.contains("第") && message.contains("次执行完成")) {
-        QRegularExpression rx("第\\s*(\\d+)\\s*次");
-        QRegularExpressionMatch match = rx.match(message);
-        if (match.hasMatch()) {
-            currentLoop = match.captured(1).toInt();
-        }
-    }
-
-    // 只在以下情况下记录RIFFA日志：
-    // 1. 前10000次循环
-    // 2. 834万次以后
-    // 3. 包含错误信息
-    if (currentLoop <= 10000 || 
-        currentLoop >= 12420000 || 
-        message.contains("失败") || 
-        message.contains("错误")) {
-        writeToLogFile("RIFFA: " + message);
-    }
-}
-
-void TestWindow::onWorkerLogMessage(const QString& message)
-{
-    appendLog(message);
-}
-
-void TestWindow::onOperationCompleted(int count, qint64 time)
-{
-    appendLog(QString("第 %1 次执行完成，耗时: %2 微秒")
+    appendLog(QString("第 %1 次FIFO读取完成，耗时: %2 微秒")
         .arg(count)
         .arg(time));
-}
-
-// 添加工作线程类的实现
-WorkerThread::WorkerThread(Pice_dll* pcie, unsigned int* buffer, QObject* parent)
-    : QThread(parent), m_pcie(pcie), m_buffer(buffer), m_running(true)
-{
-}
-
-void WorkerThread::stop()
-{
-    m_running = false;
-}
-
-void WorkerThread::run()
-{
-    int loopCount = 0;
-    const int LOG_THRESHOLD = 12420000;  // 834万次的阈值
-    bool startLogging = false;  // 是否开始记录日志的标志
-    
-    while(m_running) {
-        // 重新设置缓冲区
-        if(m_pcie->openPcie(m_buffer) != 0) {
-            // 只在失败时输出日志
-            emit logMessage("打开pcie设备失败: " + m_pcie->getLastError());
-            break;
-        }
-        
-        QPair<bool, qint64> result = m_pcie->fpga_send_recv();
-        if(!result.first) {
-            // 只在失败时输出日志
-            emit logMessage("操作失败: " + m_pcie->getLastError());
-            break;
-        }
-        
-        loopCount++;
-        
-        // 检查是否达到日志记录阈值
-        if (loopCount >= LOG_THRESHOLD && !startLogging) {
-            startLogging = true;
-            emit logMessage(QString("\n====== 达到 %1 次，开始记录详细日志 ======\n").arg(LOG_THRESHOLD));
-        }
-        
-        // 每10000次发送一次信号和记录日志
-        if(loopCount % 10000 == 0) {
-            // 发送执行完成信号，更新界面显示
-            emit operationCompleted(loopCount, result.second);
-        }
-        
-        // 检查是否需要停止循环
-        if(!m_pcie->isConnected()) {
-            emit logMessage("设备已断开，停止循环");
-            break;
-        }
-    }
-    
-    emit logMessage("循环执行结束");
 } 

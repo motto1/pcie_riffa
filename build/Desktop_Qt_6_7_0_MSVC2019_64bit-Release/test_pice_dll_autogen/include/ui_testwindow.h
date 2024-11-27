@@ -31,8 +31,7 @@ public:
     QPushButton *btnCheckPcie;
     QPushButton *btnOpenPcie;
     QLineEdit *lineEditValue;
-    QPushButton *btnPrepareSend;
-    QPushButton *btnSendRecv;
+    QPushButton *btnStartFifo;
     QPushButton *btnClosePcie;
     QTextEdit *textLog;
     QStatusBar *statusbar;
@@ -63,17 +62,11 @@ public:
 
         horizontalLayout->addWidget(lineEditValue);
 
-        btnPrepareSend = new QPushButton(centralwidget);
-        btnPrepareSend->setObjectName("btnPrepareSend");
-        btnPrepareSend->setEnabled(false);
+        btnStartFifo = new QPushButton(centralwidget);
+        btnStartFifo->setObjectName("btnStartFifo");
+        btnStartFifo->setEnabled(false);
 
-        horizontalLayout->addWidget(btnPrepareSend);
-
-        btnSendRecv = new QPushButton(centralwidget);
-        btnSendRecv->setObjectName("btnSendRecv");
-        btnSendRecv->setEnabled(false);
-
-        horizontalLayout->addWidget(btnSendRecv);
+        horizontalLayout->addWidget(btnStartFifo);
 
         btnClosePcie = new QPushButton(centralwidget);
         btnClosePcie->setObjectName("btnClosePcie");
@@ -105,8 +98,7 @@ public:
         btnCheckPcie->setText(QCoreApplication::translate("TestWindow", "\346\243\200\346\237\245\350\256\276\345\244\207", nullptr));
         btnOpenPcie->setText(QCoreApplication::translate("TestWindow", "\346\211\223\345\274\200\350\256\276\345\244\207", nullptr));
         lineEditValue->setPlaceholderText(QCoreApplication::translate("TestWindow", "\350\276\223\345\205\245\345\200\274", nullptr));
-        btnPrepareSend->setText(QCoreApplication::translate("TestWindow", "\345\207\206\345\244\207\345\217\221\351\200\201", nullptr));
-        btnSendRecv->setText(QCoreApplication::translate("TestWindow", "\345\217\221\351\200\201\346\216\245\346\224\266", nullptr));
+        btnStartFifo->setText(QCoreApplication::translate("TestWindow", "\345\220\257\345\212\250FIFO", nullptr));
         btnClosePcie->setText(QCoreApplication::translate("TestWindow", "\345\205\263\351\227\255\350\256\276\345\244\207", nullptr));
     } // retranslateUi
 
