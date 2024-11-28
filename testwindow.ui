@@ -49,6 +49,13 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="btnToggleFifo">
+        <property name="text">
+         <string>关闭线程</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnClosePcie">
         <property name="text">
          <string>关闭设备</string>
@@ -94,4 +101,4 @@
  </widget>
  <resources/>
  <connections/>
-</ui> 
+</ui>

@@ -96,6 +96,9 @@ void TestWindow::appendLog(const QString& text)
 
 void TestWindow::on_btnCheckPcie_clicked()
 {
+    Pice_dll::VersionInfo version = pcie->getVersionInfo();
+    appendLog(QString("硬件版本: %1").arg(version.hardwareVersion));
+    appendLog(QString("软件版本: %1").arg(version.softwareVersion));
     appendLog("正在检查PCIE设备...");
     int devices = pcie->checkPcie();
     appendLog(QString("找到 %1 个设备").arg(devices));
@@ -107,13 +110,6 @@ void TestWindow::on_btnOpenPcie_clicked()
     if(pcie->openPcie() == 0) {
         appendLog("PCIE设备打开成功");
         ui->btnStartFifo->setEnabled(true);
-        
-        // 获取并显示版本信息
-        Pice_dll::VersionInfo version = pcie->getVersionInfo();
-        appendLog(QString("设备版本信息:"));
-        appendLog(QString("  硬件版本: %1").arg(version.hardwareVersion));
-        appendLog(QString("  软件版本: %1").arg(version.softwareVersion));
-        
     } else {
         appendLog("打开PCIE设备失败: " + pcie->getLastError());
     }
@@ -122,14 +118,6 @@ void TestWindow::on_btnOpenPcie_clicked()
 void TestWindow::on_btnClosePcie_clicked()
 {
     appendLog("正在关闭PCIE设备...");
-    
-    if(fifoReaderThread) {
-        fifoReaderThread->stop();
-        fifoReaderThread->wait();
-        delete fifoReaderThread;
-        fifoReaderThread = nullptr;
-    }
-    
     pcie->closePcie();
     ui->btnStartFifo->setEnabled(false);
     appendLog("PCIE设备已关闭");
@@ -166,6 +154,12 @@ void FifoReaderThread::run()
     timer.start();
     
     while(m_running) {
+        // 检查连接状态，如果未连接则停止线程
+        if (!m_pcie->isConnected()) {
+            emit logMessage("设备未连接，停止FIFO读取线程");
+            break; // 退出循环
+        }
+
         // 读取数据，设置较短的超时时间（100微秒）
         if(m_pcie->fpga_read(readBuffer, 10000)) {
             readCount++;
@@ -247,4 +241,17 @@ void TestWindow::onFifoReadCompleted(qint64 count, qint64 time)
     appendLog(QString("第 %1 次FIFO读取完成，耗时: %2 微秒")
         .arg(count)
         .arg(time));
-} 
+}
+
+void TestWindow::on_btnToggleFifo_clicked()
+{
+    if(fifoReaderThread) {
+        fifoReaderThread->stop();
+        fifoReaderThread->wait();
+        delete fifoReaderThread;
+        fifoReaderThread = nullptr;
+    }
+    pcie->setFifoEnabled(false);
+    // ui->btnToggleFifo->setText("关闭FIFO线程与读取线程");
+    appendLog("关闭FIFO线程与读取线程");
+}

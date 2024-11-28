@@ -84,6 +84,8 @@ public:
     
     VersionInfo getVersionInfo();
 
+    void setFifoEnabled(bool enabled);  // 添加FIFO使能控制函数
+    
 signals:
     void logGenerated(const QString& message);
 
@@ -126,6 +128,8 @@ private:
     int package_counter;  // 包计数器
     static const int MAX_PACKAGE_COUNT = 5000;  // 最大包数限制
     int read_count;  // 添加读取计数器
+
+
 };
 
 #endif // PICE_DLL_H

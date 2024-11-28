@@ -53,6 +53,8 @@ private slots:
     void on_btnStartFifo_clicked();    // FIFO操作按钮
     void onFifoReadCompleted(qint64 count, qint64 time);
 
+    void on_btnToggleFifo_clicked();
+
 private:
     Ui::TestWindow *ui;
     Pice_dll* pcie;

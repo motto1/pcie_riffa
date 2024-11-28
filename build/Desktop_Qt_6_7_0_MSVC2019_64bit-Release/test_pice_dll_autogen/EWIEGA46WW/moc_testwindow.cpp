@@ -181,7 +181,8 @@ constexpr auto qt_meta_stringdata_CLASSTestWindowENDCLASS = QtMocHelpers::string
     "on_btnStartFifo_clicked",
     "onFifoReadCompleted",
     "count",
-    "time"
+    "time",
+    "on_btnToggleFifo_clicked"
 );
 #else  // !QT_MOC_HAS_STRINGDATA
 #error "qtmochelpers.h not found or too old."
@@ -194,7 +195,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSTestWindowENDCLASS[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-       7,   14, // methods
+       8,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -202,13 +203,14 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSTestWindowENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   56,    2, 0x08,    1 /* Private */,
-       3,    0,   57,    2, 0x08,    2 /* Private */,
-       4,    0,   58,    2, 0x08,    3 /* Private */,
-       5,    1,   59,    2, 0x08,    4 /* Private */,
-       7,    1,   62,    2, 0x08,    6 /* Private */,
-       8,    0,   65,    2, 0x08,    8 /* Private */,
-       9,    2,   66,    2, 0x08,    9 /* Private */,
+       1,    0,   62,    2, 0x08,    1 /* Private */,
+       3,    0,   63,    2, 0x08,    2 /* Private */,
+       4,    0,   64,    2, 0x08,    3 /* Private */,
+       5,    1,   65,    2, 0x08,    4 /* Private */,
+       7,    1,   68,    2, 0x08,    6 /* Private */,
+       8,    0,   71,    2, 0x08,    8 /* Private */,
+       9,    2,   72,    2, 0x08,    9 /* Private */,
+      12,    0,   77,    2, 0x08,   12 /* Private */,
 
  // slots: parameters
     QMetaType::Void,
@@ -218,6 +220,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSTestWindowENDCLASS[] = {
     QMetaType::Void, QMetaType::QString,    6,
     QMetaType::Void,
     QMetaType::Void, QMetaType::LongLong, QMetaType::LongLong,   10,   11,
+    QMetaType::Void,
 
        0        // eod
 };
@@ -248,7 +251,9 @@ Q_CONSTINIT const QMetaObject TestWindow::staticMetaObject = { {
         // method 'onFifoReadCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
-        QtPrivate::TypeAndForceComplete<qint64, std::false_type>
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        // method 'on_btnToggleFifo_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
 } };
@@ -266,6 +271,7 @@ void TestWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 4: _t->onWorkerLogMessage((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 5: _t->on_btnStartFifo_clicked(); break;
         case 6: _t->onFifoReadCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[2]))); break;
+        case 7: _t->on_btnToggleFifo_clicked(); break;
         default: ;
         }
     }
@@ -290,13 +296,13 @@ int TestWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 7)
+        if (_id < 8)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 7;
+        _id -= 8;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 7)
+        if (_id < 8)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 7;
+        _id -= 8;
     }
     return _id;
 }

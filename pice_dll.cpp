@@ -104,7 +104,7 @@ int Pice_dll::openPcie()
     // 如果已经连接,先关闭
     if(connected) {
         setLastError("设备已连接,请先关闭再重新连接");
-        return 0;
+        return 1;
     }
 
     fpga_pcie_id = 0;
@@ -304,6 +304,12 @@ void FifoThread::run()
     int count = 0;
     QElapsedTimer loopTimer;
     while(m_running) {
+        // 检查连接状态，如果未连接则停止线程
+        if (!m_pcie->isConnected()) {
+            emit logMessage("设备未连接，停止FIFO_riffa线程");
+            break;
+        }
+
         if (sent == 0) {
             emit logMessage("FPGA发送失败");
             break;
@@ -328,8 +334,6 @@ void FifoThread::run()
             }
         }
 
-        
-        
         // 接收数据到FIFO缓冲区的当前位置
         int rece = fpga_recv(m_pcie->fpga, m_pcie->fpga_pcie_chnl, 
                             (unsigned int*)(m_pcie->fifo_buffer + m_pcie->current_buffer_pos), 
@@ -478,50 +482,57 @@ Pice_dll::VersionInfo Pice_dll::getVersionInfo()
 {
     VersionInfo info;
     
-    if (!connected || !pcie_Send_Buffer) {
-        setLastError("设备未连接或缓冲区未初始化");
-        return info;
-    }
+    // if (!connected || !pcie_Send_Buffer) {
+    //     setLastError("设备未连接或缓冲区未初始化");
+    //     return info;
+    // }
 
-    // 发送获取版本信息的命令
-    pcie_Send_Buffer[0] = 0x0000013c;  // 版本信息命令
-    pcie_Send_Buffer[1] = 0x3e000000;
+    // // 发送获取版本信息的命令
+    // pcie_Send_Buffer[0] = 0x0000013c;  // 版本信息命令
+    // pcie_Send_Buffer[1] = 0x3e000000;
     
-    int sent = fpga_send(fpga, fpga_pcie_chnl, pcie_Send_Buffer, 2, 0, 1, 25000);
-    if (sent == 0) {
-        setLastError("发送版本查询命令失败");
-        return info;
-    }
+    // int sent = fpga_send(fpga, fpga_pcie_chnl, pcie_Send_Buffer, 2, 0, 1, 25000);
+    // if (sent == 0) {
+    //     setLastError("发送版本查询命令失败");
+    //     return info;
+    // }
 
-    // 接收版本信息
-    unsigned int version_buffer[4];  // 用于接收版本信息的缓冲区
-    int rece = fpga_recv(fpga, fpga_pcie_chnl, version_buffer, 4, 2500);
-    if (rece != 0) {
-        // 解析硬件版本
-        unsigned int hw_major = (version_buffer[0] >> 24) & 0xFF;
-        unsigned int hw_minor = (version_buffer[0] >> 16) & 0xFF;
-        unsigned int hw_revision = version_buffer[0] & 0xFFFF;
-        info.hardwareVersion = QString("v%1.%2.%3")
-            .arg(hw_major)
-            .arg(hw_minor)
-            .arg(hw_revision);
+    // // 接收版本信息
+    // unsigned int version_buffer[4];  // 用于接收版本信息的缓冲区
+    // int rece = fpga_recv(fpga, fpga_pcie_chnl, version_buffer, 4, 2500);
+    // if (rece != 0) {
+    //     // 解析硬件版本
+    //     unsigned int hw_major = (version_buffer[0] >> 24) & 0xFF;
+    //     unsigned int hw_minor = (version_buffer[0] >> 16) & 0xFF;
+    //     unsigned int hw_revision = version_buffer[0] & 0xFFFF;
+    //     info.hardwareVersion = QString("v%1.%2.%3")
+    //         .arg(hw_major)
+    //         .arg(hw_minor)
+    //         .arg(hw_revision);
 
-        // 解析软件版本
-        unsigned int sw_major = (version_buffer[1] >> 24) & 0xFF;
-        unsigned int sw_minor = (version_buffer[1] >> 16) & 0xFF;
-        unsigned int sw_revision = version_buffer[1] & 0xFFFF;
-        info.softwareVersion = QString("v%1.%2.%3")
-            .arg(sw_major)
-            .arg(sw_minor)
-            .arg(sw_revision);
+        // // 解析软件版本
+        // unsigned int sw_major = (version_buffer[1] >> 24) & 0xFF;
+        // unsigned int sw_minor = (version_buffer[1] >> 16) & 0xFF;
+        // unsigned int sw_revision = version_buffer[1] & 0xFFFF;
+        // info.softwareVersion = QString("v%1.%2.%3")
+        //     .arg(sw_major)
+        //     .arg(sw_minor)
+        //     .arg(sw_revision);
+        //     // 直接设置软件版本为0.1
+        info.softwareVersion = QString("v0.1");
+        info.hardwareVersion = QString("暂无");
 
-        // 记录日志
-        handleLog(QString("获取版本信息成功 - 硬件版本: %1, 软件版本: %2")
-            .arg(info.hardwareVersion)
-            .arg(info.softwareVersion));
-    } else {
-        setLastError("接收版本信息失败");
-    }
+    // 记录日志
+    handleLog(QString("获取版本信息成功 - 软件版本: %1").arg(info.softwareVersion));
 
     return info;
+}
+
+void Pice_dll::setFifoEnabled(bool enabled) {
+    if (!enabled && fifo_thread) {
+        fifo_thread->stop();  // 停止FIFO线程
+        fifo_thread->wait();
+        delete fifo_thread;
+        fifo_thread = nullptr;
+    }
 }
