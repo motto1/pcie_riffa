@@ -46,7 +46,7 @@ target_link_libraries(pice_dll PRIVATE
 )
 
 target_compile_definitions(pice_dll PRIVATE 
-    PICE_DLL_LIBRARY 
+    PICE_DLL_LIB 
     RIFFA_EXPORTS
 )
 

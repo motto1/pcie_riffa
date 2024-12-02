@@ -3,13 +3,9 @@ G:/Qt/learning/pice_dll/testwindow.h
  mmc:Q_OBJECT
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QDateTime
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QElapsedTimer
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QEventLoop
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QFile
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QObject
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QString
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QTextStream
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QThread
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/QTimer
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20functional.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20memory.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20type_traits.h
@@ -23,7 +19,6 @@ G:/Qt/learning/pice_dll/testwindow.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qatomic.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qatomic_cxx11.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbasicatomic.h
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbasictimer.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbindingstorage.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbytearray.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbytearrayalgorithms.h
@@ -126,7 +121,6 @@ G:/Qt/learning/pice_dll/testwindow.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtenvironmentvariables.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtextstream.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qthread.h
- mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtimer.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtmetamacros.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtnoop.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtpreprocessorsupport.h
@@ -192,7 +186,6 @@ G:/Qt/learning/pice_dll/testwindow.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtWidgets/qtwidgetsglobal.h
  mdp:G:/Qt/6.7.0/msvc2019_64/include/QtWidgets/qwidget.h
  mdp:G:/Qt/learning/pice_dll/pice_dll.h
- mdp:G:/Qt/learning/pice_dll/pice_dll_global.h
  mdp:G:/Qt/learning/pice_dll/riffa.h
  mdp:G:/Qt/learning/pice_dll/testwindow.h
 G:/Qt/learning/pice_dll/test_main.cpp

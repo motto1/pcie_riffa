@@ -48,8 +48,10 @@
 #include <stdlib.h>
 #include "riffa_driver.h"
 #include "riffa.h"
-#include <QDebug>
-extern void logMessage(const QString& message); // 声明外部日志函数
+#include <string>
+#include <codecvt>
+#include <locale>
+extern void logMessage(const std::string& message);  // 修改为使用 std::string
 
 // The structure used to hold data transfer information
 typedef struct RIFFA_FPGA_CHNL_IO {
@@ -124,11 +126,10 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     HANDLE evt;                           // 事件句柄
     BOOLEAN status;                       // 操作状态
     ULONG wordsReturned;                 // 实际传输的字数
-    QString logStr;                       // 日志字符串
+    std::string logStr;                       // 日志字符串
 
     // 2. 记录发送操作开始的日志
-    logStr = QString("开始FPGA发送操作 - 通道: %1, 长度: %2, 超时: %3ms")
-             .arg(chnl).arg(len).arg(timeout);
+    logStr = "开始FPGA发送操作 - 通道: " + std::to_string(chnl) + ", 长度: " + std::to_string(len) + ", 超时: " + std::to_string(timeout) + "ms";
     logMessage(logStr);
 
     // 3. 验证FPGA设备句柄是否有效
@@ -140,7 +141,7 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     // 4. 创建用于异步IO的事件对象
     evt = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (evt == NULL) {
-        logStr = QString("创建事件失败, 错误码: %1").arg(GetLastError());
+        logStr = "创建事件失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         return 0;
     }
@@ -157,7 +158,8 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     io.Timeout = timeout;      // 超时时间
 
     // 7. 执行设备IO控制，发送数据
-    logMessage("执行DeviceIoControl发送数据...");
+    logStr = "执行DeviceIoControl发送数据...";
+    logMessage(logStr);
     status = DeviceIoControl(
         fpga->dev,                    // 设备句柄
         IOCTL_RIFFA_SEND,            // IO控制码
@@ -173,21 +175,23 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     if (!status) {
         if (GetLastError() == ERROR_IO_PENDING) {
             // 8.1 IO操作正在进行中
-            logMessage("DeviceIoControl: IO_PENDING, 等待操作完成...");
+            logStr = "DeviceIoControl: IO_PENDING, 等待操作完成...";
+            logMessage(logStr);
             WaitForSingleObject(evt, INFINITE);  // 等待IO完成
             // 获取IO操作结果
             status = GetOverlappedResult(fpga->dev, &overlapStruct, &wordsReturned, FALSE);
             if (!status) {
                 if (GetLastError() == ERROR_OPERATION_ABORTED) {
-                    logMessage("操作超时或被中止");
+                    logStr = "操作超时或被中止";
+                    logMessage(logStr);
                 } else {
-                    logStr = QString("GetOverlappedResult失败, 错误码: %1").arg(GetLastError());
+                    logStr = "GetOverlappedResult失败, 错误码: " + std::to_string(GetLastError());
                     logMessage(logStr);
                 }
             }
         } else {
             // 8.2 IO操作直接失败
-            logStr = QString("DeviceIoControl失败, 错误码: %1").arg(GetLastError());
+            logStr = "DeviceIoControl失败, 错误码: " + std::to_string(GetLastError());
             logMessage(logStr);
         }
     }
@@ -196,7 +200,7 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     CloseHandle(evt);
 
     // 10. 记录完成日志
-    logStr = QString("FPGA发送操作完成 - 返回字节数: %1").arg(wordsReturned);
+    logStr = "FPGA发送操作完成 - 返回字节数: " + std::to_string(wordsReturned);
     logMessage(logStr);
 
     // 11. 返回实际传输的字数
@@ -210,11 +214,10 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     HANDLE evt;
     BOOLEAN status;
     ULONG wordsReturned;
-    QString logStr;
+    std::string logStr;
 
     // 记录接收操作的开始
-    logStr = QString("开始FPGA接收操作 - 通道: %1, 长度: %2, 超时: %3ms")
-             .arg(chnl).arg(len).arg(timeout);
+    logStr = "开始FPGA接收操作 - 通道: " + std::to_string(chnl) + ", 长度: " + std::to_string(len) + ", 超时: " + std::to_string(timeout) + "ms";
     logMessage(logStr);
 
     // Validate the device handle
@@ -226,7 +229,7 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     // Create event for overlapped I/O
     evt = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (evt == NULL) {
-        logStr = QString("创建事件失败, 错误码: %1").arg(GetLastError());
+        logStr = "创建事件失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         return 0;
     }
@@ -241,24 +244,27 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     io.Timeout = timeout;
 
     // Receive the data
-    logMessage("执行DeviceIoControl接收数据...");
+    logStr = "执行DeviceIoControl接收数据...";
+    logMessage(logStr);
     status = DeviceIoControl(fpga->dev, IOCTL_RIFFA_RECV, (LPVOID)&io,
                             sizeof(io), data, (len<<2), &wordsReturned, &overlapStruct);
     if (!status) {
         if (GetLastError() == ERROR_IO_PENDING) {
-            logMessage("DeviceIoControl: IO_PENDING, 等待操作完成...");
+            logStr = "DeviceIoControl: IO_PENDING, 等待操作完成...";
+            logMessage(logStr);
             WaitForSingleObject(evt, INFINITE);
             status = GetOverlappedResult(fpga->dev, &overlapStruct, &wordsReturned, FALSE);
             if (!status) {
                 if (GetLastError() == ERROR_OPERATION_ABORTED) {
-                    logMessage("操作超时或被中止");
+                    logStr = "操作超时或被中止";
+                    logMessage(logStr);
                 } else {
-                    logStr = QString("GetOverlappedResult失败, 错误码: %1").arg(GetLastError());
+                    logStr = "GetOverlappedResult失败, 错误码: " + std::to_string(GetLastError());
                     logMessage(logStr);
                 }
             }
         } else {
-            logStr = QString("DeviceIoControl失败, 错误码: %1").arg(GetLastError());
+            logStr = "DeviceIoControl失败, 错误码: " + std::to_string(GetLastError());
             logMessage(logStr);
         }
     }
@@ -266,7 +272,7 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     // Clean up
     CloseHandle(evt);
 
-    logStr = QString("FPGA接收操作完成 - 返回字节数: %1").arg(wordsReturned);
+    logStr = "FPGA接收操作完成 - 返回字节数: " + std::to_string(wordsReturned);
     logMessage(logStr);
 
     return wordsReturned;
@@ -326,14 +332,15 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     ULONG size;
     HANDLE dev;
     DWORD flags;
-    QString logStr;
+    std::string logStr;
 
     // 获取设备信息
-    logMessage("开始获取设备信息...");
+    logStr = "开始获取设备信息...";
+    logMessage(logStr);
     devInfo = SetupDiGetClassDevs(&GUID_RIFFA_INTERFACE, NULL, NULL,
                                  DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
     if (devInfo == INVALID_HANDLE_VALUE) {
-        logStr = QString("SetupDiGetClassDevs失败, 错误码: %1").arg(GetLastError());
+        logStr = "SetupDiGetClassDevs失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         return INVALID_HANDLE_VALUE;
     }
@@ -343,11 +350,12 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     devInfoData.cbSize = sizeof(SP_DEVINFO_DATA);
 
     // 枚举设备接口
-    logMessage(QString("尝试枚举设备接口, index: %1").arg(index));
+    logStr = "尝试枚举设备接口, index: " + std::to_string(index);
+    logMessage(logStr);
     status = SetupDiEnumDeviceInterfaces(devInfo, NULL, (LPGUID)&GUID_RIFFA_INTERFACE,
                                         index, &devIntfData);
     if (!status) {
-        logStr = QString("SetupDiEnumDeviceInterfaces失败, 错误码: %1").arg(GetLastError());
+        logStr = "SetupDiEnumDeviceInterfaces失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
@@ -356,7 +364,7 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     // 获取设备接口详细信息大小
     SetupDiGetDeviceInterfaceDetail(devInfo, &devIntfData, NULL, 0, &size, NULL);
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-        logStr = QString("获取接口详细信息大小失败, 错误码: %1").arg(GetLastError());
+        logStr = "获取接口详细信息大小失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
@@ -365,7 +373,8 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     // 分配内存
     devIntfDetail = (PSP_DEVICE_INTERFACE_DETAIL_DATA)malloc(size);
     if (!devIntfDetail) {
-        logMessage("内存分配失败");
+        logStr = "内存分配失败";
+        logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
     }
@@ -375,7 +384,7 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     status = SetupDiGetDeviceInterfaceDetail(devInfo, &devIntfData, devIntfDetail,
                                             size, NULL, &devInfoData);
     if (!status) {
-        logStr = QString("获取接口详细信息失败, 错误码: %1").arg(GetLastError());
+        logStr = "获取接口详细信息失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
         free(devIntfDetail);
         SetupDiDestroyDeviceInfoList(devInfo);
@@ -391,17 +400,19 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     flags = (overlapped ? FILE_FLAG_OVERLAPPED : FILE_ATTRIBUTE_NORMAL);
     flags = flags | FILE_FLAG_NO_BUFFERING;
     
-    logStr = QString("尝试打开设备路径: %1").arg(QString::fromWCharArray(devIntfDetail->DevicePath));
+    logStr = "尝试打开设备路径: " + 
+        std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(devIntfDetail->DevicePath);
     logMessage(logStr);
     
     dev = CreateFile(devIntfDetail->DevicePath, GENERIC_READ|GENERIC_WRITE,
                     FILE_SHARE_READ | FILE_SHARE_WRITE, &secAttr, OPEN_EXISTING, flags, NULL);
     
     if (dev == INVALID_HANDLE_VALUE) {
-        logStr = QString("CreateFile失败, 错误码: %1").arg(GetLastError());
+        logStr = "CreateFile失败, 错误码: " + std::to_string(GetLastError());
         logMessage(logStr);
     } else {
-        logMessage("设备打开成功");
+        logStr = "设备打开成功";
+        logMessage(logStr);
     }
 
     // 清理

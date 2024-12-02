@@ -171,18 +171,19 @@ namespace {
 struct qt_meta_stringdata_CLASSTestWindowENDCLASS_t {};
 constexpr auto qt_meta_stringdata_CLASSTestWindowENDCLASS = QtMocHelpers::stringData(
     "TestWindow",
-    "on_btnCheckPcie_clicked",
+    "appendLog",
     "",
+    "text",
+    "on_btnCheckPcie_clicked",
     "on_btnOpenPcie_clicked",
     "on_btnClosePcie_clicked",
-    "onLogGenerated",
-    "message",
-    "onWorkerLogMessage",
     "on_btnStartFifo_clicked",
+    "on_btnToggleFifo_clicked",
     "onFifoReadCompleted",
     "count",
     "time",
-    "on_btnToggleFifo_clicked"
+    "onWorkerLogMessage",
+    "message"
 );
 #else  // !QT_MOC_HAS_STRINGDATA
 #error "qtmochelpers.h not found or too old."
@@ -203,24 +204,24 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSTestWindowENDCLASS[] = {
        0,       // signalCount
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   62,    2, 0x08,    1 /* Private */,
-       3,    0,   63,    2, 0x08,    2 /* Private */,
-       4,    0,   64,    2, 0x08,    3 /* Private */,
-       5,    1,   65,    2, 0x08,    4 /* Private */,
-       7,    1,   68,    2, 0x08,    6 /* Private */,
-       8,    0,   71,    2, 0x08,    8 /* Private */,
-       9,    2,   72,    2, 0x08,    9 /* Private */,
-      12,    0,   77,    2, 0x08,   12 /* Private */,
+       1,    1,   62,    2, 0x0a,    1 /* Public */,
+       4,    0,   65,    2, 0x08,    3 /* Private */,
+       5,    0,   66,    2, 0x08,    4 /* Private */,
+       6,    0,   67,    2, 0x08,    5 /* Private */,
+       7,    0,   68,    2, 0x08,    6 /* Private */,
+       8,    0,   69,    2, 0x08,    7 /* Private */,
+       9,    2,   70,    2, 0x08,    8 /* Private */,
+      12,    1,   75,    2, 0x08,   11 /* Private */,
 
  // slots: parameters
+    QMetaType::Void, QMetaType::QString,    3,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, QMetaType::QString,    6,
-    QMetaType::Void, QMetaType::QString,    6,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::LongLong, QMetaType::LongLong,   10,   11,
-    QMetaType::Void,
+    QMetaType::Void, QMetaType::QString,   13,
 
        0        // eod
 };
@@ -234,26 +235,26 @@ Q_CONSTINIT const QMetaObject TestWindow::staticMetaObject = { {
     qt_incomplete_metaTypeArray<qt_meta_stringdata_CLASSTestWindowENDCLASS_t,
         // Q_OBJECT / Q_GADGET
         QtPrivate::TypeAndForceComplete<TestWindow, std::true_type>,
+        // method 'appendLog'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'on_btnCheckPcie_clicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'on_btnOpenPcie_clicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'on_btnClosePcie_clicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'onLogGenerated'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        // method 'onWorkerLogMessage'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'on_btnStartFifo_clicked'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'on_btnToggleFifo_clicked'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onFifoReadCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
-        // method 'on_btnToggleFifo_clicked'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>
+        // method 'onWorkerLogMessage'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
     >,
     nullptr
 } };
@@ -264,14 +265,14 @@ void TestWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         auto *_t = static_cast<TestWindow *>(_o);
         (void)_t;
         switch (_id) {
-        case 0: _t->on_btnCheckPcie_clicked(); break;
-        case 1: _t->on_btnOpenPcie_clicked(); break;
-        case 2: _t->on_btnClosePcie_clicked(); break;
-        case 3: _t->onLogGenerated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 4: _t->onWorkerLogMessage((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 5: _t->on_btnStartFifo_clicked(); break;
+        case 0: _t->appendLog((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 1: _t->on_btnCheckPcie_clicked(); break;
+        case 2: _t->on_btnOpenPcie_clicked(); break;
+        case 3: _t->on_btnClosePcie_clicked(); break;
+        case 4: _t->on_btnStartFifo_clicked(); break;
+        case 5: _t->on_btnToggleFifo_clicked(); break;
         case 6: _t->onFifoReadCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[2]))); break;
-        case 7: _t->on_btnToggleFifo_clicked(); break;
+        case 7: _t->onWorkerLogMessage((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
     }

@@ -50,7 +50,7 @@ cmake_ninja_workdir = G$:\Qt\learning\pice_dll\build\Desktop_Qt_6_7_0_MSVC2019_6
 build cmake_object_order_depends_target_pice_dll: phony || pice_dll_autogen pice_dll_autogen\mocs_compilation.cpp pice_dll_autogen\timestamp pice_dll_autogen_timestamp_deps
 
 build CMakeFiles\pice_dll.dir\pice_dll_autogen\mocs_compilation.cpp.obj: CXX_COMPILER__pice_dll_unscanned_Release G$:\Qt\learning\pice_dll\build\Desktop_Qt_6_7_0_MSVC2019_64bit-Release\pice_dll_autogen\mocs_compilation.cpp || cmake_object_order_depends_target_pice_dll
-  DEFINES = -DPICE_DLL_LIBRARY -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
+  DEFINES = -DPICE_DLL_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD -Zc:__cplusplus -permissive- -utf-8
   INCLUDES = -IG:\Qt\learning\pice_dll\build\Desktop_Qt_6_7_0_MSVC2019_64bit-Release\pice_dll_autogen\include -IG:\Qt\learning\pice_dll\include -external:IG:\Qt\6.7.0\msvc2019_64\include\QtCore -external:IG:\Qt\6.7.0\msvc2019_64\include -external:IG:\Qt\6.7.0\msvc2019_64\mkspecs\win32-msvc -external:IG:\Qt\6.7.0\msvc2019_64\include\QtWidgets -external:IG:\Qt\6.7.0\msvc2019_64\include\QtGui -external:W0
   OBJECT_DIR = CMakeFiles\pice_dll.dir
@@ -59,7 +59,7 @@ build CMakeFiles\pice_dll.dir\pice_dll_autogen\mocs_compilation.cpp.obj: CXX_COM
   TARGET_PDB = pice_dll.pdb
 
 build CMakeFiles\pice_dll.dir\pice_dll.cpp.obj: CXX_COMPILER__pice_dll_unscanned_Release G$:\Qt\learning\pice_dll\pice_dll.cpp || cmake_object_order_depends_target_pice_dll
-  DEFINES = -DPICE_DLL_LIBRARY -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
+  DEFINES = -DPICE_DLL_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD -Zc:__cplusplus -permissive- -utf-8
   INCLUDES = -IG:\Qt\learning\pice_dll\build\Desktop_Qt_6_7_0_MSVC2019_64bit-Release\pice_dll_autogen\include -IG:\Qt\learning\pice_dll\include -external:IG:\Qt\6.7.0\msvc2019_64\include\QtCore -external:IG:\Qt\6.7.0\msvc2019_64\include -external:IG:\Qt\6.7.0\msvc2019_64\mkspecs\win32-msvc -external:IG:\Qt\6.7.0\msvc2019_64\include\QtWidgets -external:IG:\Qt\6.7.0\msvc2019_64\include\QtGui -external:W0
   OBJECT_DIR = CMakeFiles\pice_dll.dir
@@ -68,7 +68,7 @@ build CMakeFiles\pice_dll.dir\pice_dll.cpp.obj: CXX_COMPILER__pice_dll_unscanned
   TARGET_PDB = pice_dll.pdb
 
 build CMakeFiles\pice_dll.dir\riffa.cpp.obj: CXX_COMPILER__pice_dll_unscanned_Release G$:\Qt\learning\pice_dll\riffa.cpp || cmake_object_order_depends_target_pice_dll
-  DEFINES = -DPICE_DLL_LIBRARY -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
+  DEFINES = -DPICE_DLL_LIB -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DRIFFA_EXPORTS -DUNICODE -DWIN32 -DWIN64 -D_ENABLE_EXTENDED_ALIGNED_STORAGE -D_UNICODE -D_WIN64 -Dpice_dll_EXPORTS
   FLAGS = /DWIN32 /D_WINDOWS /GR /EHsc /O2 /Ob2 /DNDEBUG -std:c++17 -MD -Zc:__cplusplus -permissive- -utf-8
   INCLUDES = -IG:\Qt\learning\pice_dll\build\Desktop_Qt_6_7_0_MSVC2019_64bit-Release\pice_dll_autogen\include -IG:\Qt\learning\pice_dll\include -external:IG:\Qt\6.7.0\msvc2019_64\include\QtCore -external:IG:\Qt\6.7.0\msvc2019_64\include -external:IG:\Qt\6.7.0\msvc2019_64\mkspecs\win32-msvc -external:IG:\Qt\6.7.0\msvc2019_64\include\QtWidgets -external:IG:\Qt\6.7.0\msvc2019_64\include\QtGui -external:W0
   OBJECT_DIR = CMakeFiles\pice_dll.dir

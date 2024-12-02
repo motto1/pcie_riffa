@@ -7,38 +7,64 @@
 // 初始化静态成员变量
 int TestWindow::currentLoopCount = 0;
 
-TestWindow::TestWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::TestWindow),
-    pcie(new Pice_dll()),
-    receiveBuffer(nullptr),
-    logFile(nullptr),
-    logStream(nullptr),
-    fifoReaderThread(nullptr)
+// 定义静态回调函数
+static void LogCallbackFunc(const char* message) {
+    // 获取当前窗口实例
+    if (QMainWindow* mainWindow = qobject_cast<QMainWindow*>(QApplication::activeWindow())) {
+        if (TestWindow* testWindow = qobject_cast<TestWindow*>(mainWindow)) {
+            // 在主线程中处理日志
+            QMetaObject::invokeMethod(testWindow, "appendLog", 
+                Qt::QueuedConnection,
+                Q_ARG(QString, QString::fromUtf8(message)));
+        }
+    }
+}
+
+TestWindow::TestWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::TestWindow)
+    , pcie_instance(nullptr)
+    , logFile(nullptr)
+    , logStream(nullptr)
+    , fifoReaderThread(nullptr)
 {
     ui->setupUi(this);
     setWindowTitle("PCIE DLL 测试程序");
     
-    // 连接日志信号
-    connect(pcie, &Pice_dll::logGenerated, this, &TestWindow::onLogGenerated);
+    // 创建 DLL 实例
+    pcie_instance = CreatePiceDll();
     
     // 初始化日志文件
     initLogFile();
+    
+    // 设置日志回调
+    SetLogCallback(pcie_instance, LogCallbackFunc);
+    
+    // 连接日志控制复选框
+    connect(ui->checkBoxRiffaLog, &QCheckBox::toggled, this, [this](bool checked) {
+        EnableRiffaLog(checked);
+    });
+    
+    connect(ui->checkBoxPiceDllLog, &QCheckBox::toggled, this, [this](bool checked) {
+        EnablePiceDllLog(checked);
+    });
 }
 
 TestWindow::~TestWindow()
 {
-    if(fifoReaderThread) {
+    if (fifoReaderThread) {
         fifoReaderThread->stop();
         fifoReaderThread->wait();
         delete fifoReaderThread;
     }
+    
+    if (pcie_instance) {
+        ClosePcie(pcie_instance);
+        DestroyPiceDll(pcie_instance);
+    }
+    
     closeLogFile();
     delete ui;
-    if(receiveBuffer) {
-        delete[] receiveBuffer;
-    }
-    delete pcie;
 }
 
 void TestWindow::initLogFile()
@@ -93,153 +119,95 @@ void TestWindow::appendLog(const QString& text)
     ui->textLog->append(text);
     writeToLogFile(text);
 }
-
 void TestWindow::on_btnCheckPcie_clicked()
 {
-    Pice_dll::VersionInfo version = pcie->getVersionInfo();
-    appendLog(QString("硬件版本: %1").arg(version.hardwareVersion));
-    appendLog(QString("软件版本: %1").arg(version.softwareVersion));
+    // 获取版本信息
+    char hwVer[256] = {0};
+    char swVer[256] = {0};
+    GetVersionInfo(pcie_instance, hwVer, swVer, sizeof(hwVer));
+    
+    appendLog(QString("硬件版本: %1").arg(hwVer));
+    appendLog(QString("软件版本: %1").arg(swVer));
+    
+    // 检查PCIE设备
     appendLog("正在检查PCIE设备...");
-    int devices = pcie->checkPcie();
-    appendLog(QString("找到 %1 个设备").arg(devices));
+    int devices = CheckPcie(pcie_instance);
+    if (devices > 0) {
+        appendLog(QString("找到 %1 个设备").arg(devices));
+        ui->btnOpenPcie->setEnabled(true);
+    } else {
+        appendLog("未找到PCIE设备");
+        ui->btnOpenPcie->setEnabled(false);
+    }
 }
 
 void TestWindow::on_btnOpenPcie_clicked()
 {    
     appendLog("正在打开PCIE设备...");
-    if(pcie->openPcie() == 0) {
+    if (OpenPcie(pcie_instance) == 0) {
         appendLog("PCIE设备打开成功");
         ui->btnStartFifo->setEnabled(true);
+        ui->btnOpenPcie->setEnabled(false);
+        ui->btnClosePcie->setEnabled(true);
     } else {
-        appendLog("打开PCIE设备失败: " + pcie->getLastError());
+        appendLog(QString("打开PCIE设备失败: %1").arg(GetPiceDllError(pcie_instance)));
     }
 }
 
 void TestWindow::on_btnClosePcie_clicked()
 {
     appendLog("正在关闭PCIE设备...");
-    pcie->closePcie();
+    ClosePcie(pcie_instance);
     ui->btnStartFifo->setEnabled(false);
+    ui->btnOpenPcie->setEnabled(true);
+    ui->btnClosePcie->setEnabled(false);
     appendLog("PCIE设备已关闭");
 }
 
-void TestWindow::onLogGenerated(const QString& message)
-{
-    // 日志已经在handleLog中添加了前缀，直接写入和显示
-    writeToLogFile(message);
-    ui->textLog->append(message);
-}
+
 
 void TestWindow::onWorkerLogMessage(const QString& message)
 {
     appendLog(message);
 }
 
-// FIFO读取线程实现
-FifoReaderThread::FifoReaderThread(Pice_dll* pcie, QObject* parent)
-    : QThread(parent), m_pcie(pcie), m_running(true)
-{
-}
-
-void FifoReaderThread::stop()
-{
-    m_running = false;
-}
-
-void FifoReaderThread::run()
-{
-    unsigned int* readBuffer = new unsigned int[BUFFER_SIZE];
-    qint64 readCount = 0;
-    QElapsedTimer timer;
-    timer.start();
-    
-    while(m_running) {
-        // 检查连接状态，如果未连接则停止线程
-        if (!m_pcie->isConnected()) {
-            emit logMessage("设备未连接，停止FIFO读取线程");
-            break; // 退出循环
-        }
-
-        // 读取数据，设置较短的超时时间（100微秒）
-        if(m_pcie->fpga_read(readBuffer, 10000)) {
-            readCount++;
-            
-            // 每10000次打印一次状态
-            if(readCount % 10000 == 0 || readCount < 1000) {
-                emit readCompleted(readCount, timer.nsecsElapsed() / 1000);  // 转换为微秒
-                QString logMsg = QString("已完成 %1 次读取，当前位置: %2 MB，FIFO写入位置: %3 MB")
-                    .arg(readCount)
-                    .arg(m_pcie->getNextReadPos() / (1024 * 1024))
-                    .arg(m_pcie->getCurrentFifoPos() / (1024 * 1024));
-                emit logMessage(logMsg);
-                qDebug() << logMsg; // 添加控制台输出
-                timer.restart();  // 重置计时器
-            }
-        } else {
-            if(m_running) {  // 只在非停止状态下输出错误
-                // 如果是超时错误，不输出日志，继续尝试
-                if(m_pcie->getLastError() != "读取超时") {
-                    emit logMessage("读取失败: " + m_pcie->getLastError());
-                }
-            }
-        }
-        // // 精确控制10微秒的延时
-        // QThread::usleep(10);  // 10微秒延时
-    }
-    
-    delete[] readBuffer;
-    emit logMessage("FIFO读取线程结束");
-}
-
 void TestWindow::on_btnStartFifo_clicked()
 {
     bool ok;
     int value = ui->lineEditValue->text().toInt(&ok);
-    if(!ok) {
-        QMessageBox::warning(this, "错误", "请输入有效的数值");
+    if (!ok) {
+        appendLog("请输入有效的数值");
         return;
     }
-    
-    // 根据复选框状态设置日志
-    Pice_dll::enableRiffaLog(ui->checkBoxRiffaLog->isChecked());
-    Pice_dll::enablePiceDllLog(ui->checkBoxPiceDllLog->isChecked());
-    
     // 锁定其他按钮
     ui->btnStartFifo->setEnabled(false);
     ui->btnToggleFifo->setEnabled(true); // 关闭线程的按钮保持可用
     ui->btnCheckPcie->setEnabled(false);
     ui->btnOpenPcie->setEnabled(false);
     ui->btnClosePcie->setEnabled(false);
-
-    // 先创建并启动读取线程
-    if(fifoReaderThread) {
-        fifoReaderThread->stop();
-        fifoReaderThread->wait();
-        delete fifoReaderThread;
-    }
-    
-    fifoReaderThread = new FifoReaderThread(pcie, this);
-    connect(fifoReaderThread, &FifoReaderThread::logMessage, 
-            this, &TestWindow::onWorkerLogMessage);
-    connect(fifoReaderThread, &FifoReaderThread::readCompleted,
-            this, &TestWindow::onFifoReadCompleted);
-    
-    // 启动读取线程
-    fifoReaderThread->start();
-    
-    // 然后启动FIFO写入
+    // 启动FIFO操作
     appendLog(QString("开始FIFO操作，输入值: %1").arg(value));
-    if(pcie->fpga_fifo_start(value)) {
-        appendLog("FIFO写入初始化成功");
+    if (FpgaFifoStart(pcie_instance, value)) {
+        appendLog("FIFO操作启动成功");
         
-        // 创建一个新线程来循环执行FIFO写入操作
+        // 创建并启动读取线程
+        if (!fifoReaderThread) {
+            fifoReaderThread = new FifoReaderThread(pcie_instance, this);
+            connect(fifoReaderThread, &FifoReaderThread::logMessage, 
+                    this, &TestWindow::onWorkerLogMessage);
+            connect(fifoReaderThread, &FifoReaderThread::readCompleted,
+                    this, &TestWindow::onFifoReadCompleted);
+            fifoReaderThread->start();
+        }
+
+        // 启动FIFO写入线程
         QThread* fifoWriteThread = new QThread;
         QObject* worker = new QObject;
         worker->moveToThread(fifoWriteThread);
         
         connect(fifoWriteThread, &QThread::started, [this, worker]() {
-            while(!fifoReaderThread->isFinished()) {
-                pcie->fpga_fifo_once();
+            while (IsConnected(pcie_instance) && fifoReaderThread && !fifoReaderThread->isFinished()) {
+                FpgaFifoOnce(pcie_instance);
             }
             worker->deleteLater();
         });
@@ -250,9 +218,9 @@ void TestWindow::on_btnStartFifo_clicked()
         fifoWriteThread->start();
         appendLog("FIFO写入线程已启动");
     } else {
-        appendLog("FIFO操作启动失败: " + pcie->getLastError());
+        appendLog(QString("FIFO操作启动失败: %1").arg(GetPiceDllError(pcie_instance)));
         // 如果启动失败，停止读取线程
-        if(fifoReaderThread) {
+        if (fifoReaderThread) {
             fifoReaderThread->stop();
             fifoReaderThread->wait();
             delete fifoReaderThread;
@@ -270,13 +238,12 @@ void TestWindow::onFifoReadCompleted(qint64 count, qint64 time)
 
 void TestWindow::on_btnToggleFifo_clicked()
 {
-    if(fifoReaderThread) {
+    if (fifoReaderThread) {
         fifoReaderThread->stop();
         fifoReaderThread->wait();
         delete fifoReaderThread;
         fifoReaderThread = nullptr;
+        appendLog("已停止FIFO读取线程");
     }
-    // pcie->setFifoEnabled(false);
-    // ui->btnToggleFifo->setText("关闭FIFO线程与读取线程");
-    appendLog("关闭FIFO线程与读取线程");
 }
+
