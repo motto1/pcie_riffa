@@ -1,8 +1,9 @@
 G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MSVC2019_64bit-Release/pice_dll_autogen/EWIEGA46WW/moc_pice_dll.cpp: G:/Qt/learning/pice_dll/pice_dll.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/QElapsedTimer \
+  G:/Qt/6.7.0/msvc2019_64/include/QtCore/QEventLoop \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/QObject \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/QString \
-  G:/Qt/6.7.0/msvc2019_64/include/QtCore/QThread \
+  G:/Qt/6.7.0/msvc2019_64/include/QtCore/QTimer \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20functional.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20memory.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/q20type_traits.h \
@@ -15,6 +16,7 @@ G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MSVC2019_64bit-Release/pice_dll_a
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qatomic.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qatomic_cxx11.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbasicatomic.h \
+  G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbasictimer.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbindingstorage.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbytearray.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qbytearrayalgorithms.h \
@@ -34,6 +36,7 @@ G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MSVC2019_64bit-Release/pice_dll_a
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qdatastream.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qdeadlinetimer.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qelapsedtimer.h \
+  G:/Qt/6.7.0/msvc2019_64/include/QtCore/qeventloop.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qexceptionhandling.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qflags.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qfloat16.h \
@@ -89,7 +92,7 @@ G:/Qt/learning/pice_dll/build/Desktop_Qt_6_7_0_MSVC2019_64bit-Release/pice_dll_a
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtcoreexports.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtdeprecationmarkers.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtenvironmentvariables.h \
-  G:/Qt/6.7.0/msvc2019_64/include/QtCore/qthread.h \
+  G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtimer.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtmetamacros.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtnoop.h \
   G:/Qt/6.7.0/msvc2019_64/include/QtCore/qtpreprocessorsupport.h \

@@ -229,7 +229,25 @@ void TestWindow::on_btnStartFifo_clicked()
     
     // 然后启动FIFO写入
     appendLog(QString("开始FIFO操作，输入值: %1").arg(value));
-    if(pcie->fpga_fifo(value)) {
+    if(pcie->fpga_fifo_start(value)) {
+        appendLog("FIFO写入初始化成功");
+        
+        // 创建一个新线程来循环执行FIFO写入操作
+        QThread* fifoWriteThread = new QThread;
+        QObject* worker = new QObject;
+        worker->moveToThread(fifoWriteThread);
+        
+        connect(fifoWriteThread, &QThread::started, [this, worker]() {
+            while(!fifoReaderThread->isFinished()) {
+                pcie->fpga_fifo_once();
+            }
+            worker->deleteLater();
+        });
+        
+        connect(worker, &QObject::destroyed, fifoWriteThread, &QThread::quit);
+        connect(fifoWriteThread, &QThread::finished, fifoWriteThread, &QThread::deleteLater);
+        
+        fifoWriteThread->start();
         appendLog("FIFO写入线程已启动");
     } else {
         appendLog("FIFO操作启动失败: " + pcie->getLastError());
@@ -258,7 +276,7 @@ void TestWindow::on_btnToggleFifo_clicked()
         delete fifoReaderThread;
         fifoReaderThread = nullptr;
     }
-    pcie->setFifoEnabled(false);
+    // pcie->setFifoEnabled(false);
     // ui->btnToggleFifo->setText("关闭FIFO线程与读取线程");
     appendLog("关闭FIFO线程与读取线程");
 }

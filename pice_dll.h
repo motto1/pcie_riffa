@@ -6,7 +6,8 @@
 #include <QString>
 #include <QObject>
 #include <QElapsedTimer>
-#include <QThread>
+#include <QTimer>
+#include <QEventLoop>
 
 // 添加导出函数声明
 #ifdef __cplusplus
@@ -18,7 +19,8 @@ PICE_DLL_EXPORT void DestroyPiceDll(void* instance);
 PICE_DLL_EXPORT int CheckPcie(void* instance);
 PICE_DLL_EXPORT int OpenPcie(void* instance);
 PICE_DLL_EXPORT void ClosePcie(void* instance);
-PICE_DLL_EXPORT bool FpgaFifo(void* instance, int value);
+PICE_DLL_EXPORT bool FpgaFifoStart(void* instance, int value);
+PICE_DLL_EXPORT void FpgaFifoOnce(void* instance);
 PICE_DLL_EXPORT bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms);
 PICE_DLL_EXPORT const char* GetPiceDllError(void* instance);
 PICE_DLL_EXPORT bool IsConnected(void* instance);
@@ -30,31 +32,6 @@ PICE_DLL_EXPORT void EnablePiceDllLog(bool enable);
 #ifdef __cplusplus
 }
 #endif
-
-// 前向声明
-class Pice_dll;
-
-// FIFO线程类
-class FifoThread : public QThread
-{
-    Q_OBJECT
-public:
-    FifoThread(Pice_dll* pcie, int value, QObject* parent = nullptr);
-    void stop();
-
-signals:
-    void logMessage(const QString& message);
-    void operationCompleted(qint64 pos, qint64 time);
-
-protected:
-    void run() override;
-
-private:
-    Pice_dll* m_pcie;
-    int m_value;
-    bool m_running;
-    int sent;  // 添加sent变量
-};
 
 class PICE_DLL_EXPORT Pice_dll : public QObject
 {
@@ -83,42 +60,41 @@ public:
     static void handleLog(const QString& message);
 
     // FIFO操作函数
-    bool fpga_fifo(int value);  // FIFO操作函数
+    bool fpga_fifo_start(int value);  // 启动FIFO操作
+    void fpga_fifo_once();  // 单次FIFO操作
+    // void setFifoEnabled(bool enabled);  // 添加FIFO使能控制函数
     size_t getCurrentFifoPos() const { return current_buffer_pos; }  // 获取当前FIFO位置
 
-    // 添加FIFO读取函数
+    // FIFO读取函数
     bool fpga_read(unsigned int* read_buffer, int timeout_ms = 1000);  // 默认超时1秒
     size_t getNextReadPos() const { return next_read_pos; }  // 获取下一个读取位置
 
-    // 声明FifoThread为友元类，使其能访问私有成员
-    friend class FifoThread;
-
-    // 添加日志控制函数
+    // 日志控制函数
     static void enableRiffaLog(bool enable) { riffa_log_enabled = enable; }
     static bool isRiffaLogEnabled() { return riffa_log_enabled; }
     static void enablePiceDllLog(bool enable) { pice_dll_log_enabled = enable; }
     static bool isPiceDllLogEnabled() { return pice_dll_log_enabled; }
 
-    // 添加版本信息相关函数
+    // 版本信息相关函数
     struct VersionInfo {
         QString hardwareVersion;
         QString softwareVersion;
     };
     
     VersionInfo getVersionInfo();
-
-    void setFifoEnabled(bool enabled);  // 添加FIFO使能控制函数
     
 signals:
     void logGenerated(const QString& message);
+    void operationCompleted(qint64 pos, qint64 time);
 
-    // 添加友元声��，允许导出函数访问私有成员
+    // 添加友元声，允许导出函数访问私有成员
     friend PICE_DLL_EXPORT void* CreatePiceDll();
     friend PICE_DLL_EXPORT void DestroyPiceDll(void* instance);
     friend PICE_DLL_EXPORT int CheckPcie(void* instance);
     friend PICE_DLL_EXPORT int OpenPcie(void* instance);
     friend PICE_DLL_EXPORT void ClosePcie(void* instance);
-    friend PICE_DLL_EXPORT bool FpgaFifo(void* instance, int value);
+    friend PICE_DLL_EXPORT bool FpgaFifoStart(void* instance, int value);
+    friend PICE_DLL_EXPORT void FpgaFifoOnce(void* instance);
     friend PICE_DLL_EXPORT bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms);
     friend PICE_DLL_EXPORT const char* GetPiceDllError(void* instance);
     friend PICE_DLL_EXPORT bool IsConnected(void* instance);
@@ -143,18 +119,19 @@ private:
     
     // 计时和计数相关
     QElapsedTimer m_loopTimer;
+    QElapsedTimer loopTimer;
 
     // FIFO相关变量
     unsigned char* fifo_buffer;      // 500M大内存缓冲区
     size_t buffer_size;              // 缓冲区总大小
     size_t current_buffer_pos;       // 当前写入位置
     static const size_t FIFO_BUFFER_SIZE = 500 * 1024 * 1024;  // 500MB
+    int count;//
 
     // 辅助函数
     void setLastError(const QString& error);
     void cleanup();
 
-    FifoThread* fifo_thread;  // 添加FIFO线程指针
 
     // 添加读取相关变量
     size_t next_read_pos;           // 下一个要读取的位置

@@ -1,6 +1,9 @@
 #include "pice_dll.h"
 #include <QDebug>
 #include "riffa.h"
+#include <QTimer>
+#include <QEventLoop>
+#include <windows.h>
 
 // 初始化静态成员变量
 Pice_dll* Pice_dll::instance = nullptr;
@@ -46,12 +49,12 @@ Pice_dll::Pice_dll() :
     fifo_buffer(nullptr),
     buffer_size(FIFO_BUFFER_SIZE),
     current_buffer_pos(0),
-    fifo_thread(nullptr),
     next_read_pos(0),
     last_package_size(0),
     has_new_data(false),
     package_counter(0),
-    read_count(0)
+    read_count(0),
+    count(0)
 {
     instance = this;  // 设置实例指针
     m_loopTimer.start();
@@ -75,12 +78,6 @@ Pice_dll::~Pice_dll()
     if (fifo_buffer) {
         free(fifo_buffer);
         fifo_buffer = nullptr;
-    }
-
-    if (fifo_thread) {
-        fifo_thread->stop();
-        fifo_thread->wait();
-        delete fifo_thread;
     }
 }
 
@@ -247,19 +244,14 @@ void Pice_dll::cleanup()
     read_count = 0;  // 重置读取计数器
 }
 
-bool Pice_dll::fpga_fifo(int value)
+bool Pice_dll::fpga_fifo_start(int value)
 {
     if (!connected || !pcie_Send_Buffer || !fifo_buffer) {
         setLastError("设备未连接或缓冲区未初始化");
         return false;
     }
     input_value = value;  // 保存输入值
-    // 停止现有的FIFO线程
-    if (fifo_thread) {
-        fifo_thread->stop();
-        fifo_thread->wait();
-        delete fifo_thread;
-    }
+
     // 获取输入值的高16位和低16位
     uint16_t high_word = (input_value >> 16) & 0xFFFF;
     uint16_t low_word = input_value & 0xFFFF;
@@ -273,154 +265,145 @@ bool Pice_dll::fpga_fifo(int value)
         setLastError("FPGA预备发送失败");
         return false;
     }
-    // 创建并启动新的FIFO线程
-    fifo_thread = new FifoThread(this, value, this);
-    connect(fifo_thread, &FifoThread::logMessage, 
-            this, &Pice_dll::logGenerated);
-    connect(fifo_thread, &FifoThread::operationCompleted,
-            [this](qint64 pos, qint64 time) {
-                logMessage(QString("FIFO位置: %1 MB, 耗时: %2 微秒")
-                    .arg(pos / (1024 * 1024))
-                    .arg(time));
-            });
+    // // 创建并启动新的FIFO线程
+    // fifo_thread = new FifoThread(this, value, this);
+    // connect(fifo_thread, &FifoThread::logMessage, 
+    //         this, &Pice_dll::logGenerated);
+    // connect(fifo_thread, &FifoThread::operationCompleted,
+    //         [this](qint64 pos, qint64 time) {
+    //             logMessage(QString("FIFO位置: %1 MB, 耗时: %2 微秒")
+    //                 .arg(pos / (1024 * 1024))
+    //                 .arg(time));
+    //         });
 
-    fifo_thread->start();
+    // fifo_thread->start();
+    count = 0;
     return true;
 }
 
-// 添加FIFO线程类的实现
-FifoThread::FifoThread(Pice_dll* pcie, int value, QObject* parent)
-    : QThread(parent), m_pcie(pcie), m_value(value), m_running(true)
-{
-}
 
-void FifoThread::stop()
-{
-    m_running = false;
-}
 
-void FifoThread::run()
+void Pice_dll::fpga_fifo_once()
 {
-    int count = 0;
-    QElapsedTimer loopTimer;
-    while(m_running) {
-        // 检查连接状态，如果未连接则停止线程
-        if (!m_pcie->isConnected()) {
-            emit logMessage("设备未连接，停止FIFO_riffa线程");
-            break;
-        }
+    // 检查连接状态，如果未连接则停止线程
+    if (!isConnected()) {
+        emit logMessage("设备未连接，停止FIFO_riffa线程");
+        return;
+    }
 
-        if (sent == 0) {
-            emit logMessage("FPGA发送失败");
-            break;
-        }
-        loopTimer.start(); // 开始计时  
-        // 计算本次接收数据的大小
-        size_t recv_size = m_value * 6 * sizeof(unsigned int);
+    if (sent == 0) {
+        emit logMessage("FPGA发送失败");
+        return;
+    }
+    loopTimer.start(); // 开始计时  
+    // 计算本次接收数据的大小
+    size_t recv_size = input_value * 6 * sizeof(unsigned int);
         
-        // 检查缓冲区是否有足够空间容纳完整的包
-        if (m_pcie->current_buffer_pos + recv_size > m_pcie->buffer_size) {
-            // 如果剩余空间不足一个完整的包，直接跳到缓冲区开始
-            size_t remaining_space = m_pcie->buffer_size - m_pcie->current_buffer_pos;
-            if (remaining_space < recv_size) {
+    // 检查缓冲区是否有足够空间容纳完整的包
+    if (current_buffer_pos + recv_size > buffer_size) {
+        // 如果剩余空间不足一个完整的包，直接跳到缓冲区开始
+        size_t remaining_space = buffer_size - current_buffer_pos;
+        if (remaining_space < recv_size) {
                 // 在跳转前记录日志
                 emit logMessage(QString("缓冲区剩余空间(%1 字节)不足一个完整包(%2 字节)，跳转到缓冲区起始位置")
                     .arg(remaining_space)
                     .arg(recv_size));
                 
                 // 用0填充剩余空间，保持对齐
-                memset(m_pcie->fifo_buffer + m_pcie->current_buffer_pos, 0, remaining_space);
-                m_pcie->current_buffer_pos = 0;
-            }
+                memset(fifo_buffer + current_buffer_pos, 0, remaining_space);
+            current_buffer_pos = 0;
+        }
+    }
+
+    // 接收数据到FIFO缓冲区的当前位置
+    int rece = fpga_recv(fpga, fpga_pcie_chnl, 
+                            (unsigned int*)(fifo_buffer + current_buffer_pos), 
+                            input_value * 6, 2500);
+                            
+    if (rece != 0) {
+        count++;
+        // 更新包计数器
+        package_counter++;
+        if (package_counter >= MAX_PACKAGE_COUNT) {
+            emit logMessage(QString("组计数器达到上限(%1)，停止接收")
+                .arg(package_counter));
+            return;
         }
 
-        // 接收数据到FIFO缓冲区的当前位置
-        int rece = fpga_recv(m_pcie->fpga, m_pcie->fpga_pcie_chnl, 
-                            (unsigned int*)(m_pcie->fifo_buffer + m_pcie->current_buffer_pos), 
-                            m_value * 6, 2500);
-                            
-        if (rece != 0) {
-            count++;
-            // 更新包计数器
-            m_pcie->package_counter++;
-            if (m_pcie->package_counter >= m_pcie->MAX_PACKAGE_COUNT) {
-                emit logMessage(QString("组计数器达到上限(%1)，停止接收")
-                    .arg(m_pcie->package_counter));
-                break;
-            }
-
-            // // 每10000次打印一次数据和循环时间
-            // if(count % 10000 == 0 || count < 1000) {
-            //     unsigned int* recv_data = (unsigned int*)(m_pcie->fifo_buffer + m_pcie->current_buffer_pos);
-            //     QString data_str;
-            //     for(int i = 0; i < m_value * 6 && i < 10; i++) {
-            //         data_str += QString("0x%1 ").arg(recv_data[i], 8, 16, QChar('0'));
-            //     }
-            //     if(m_value * 6 > 10) {
+        // // 每10000次打印一次数据和循环时间
+        // if(count % 10000 == 0 || count < 1000) {
+        //     unsigned int* recv_data = (unsigned int*)(fifo_buffer + current_buffer_pos);
+        //     QString data_str;
+        //     for(int i = 0; i < m_value * 6 && i < 10; i++) {
+        //         data_str += QString("0x%1 ").arg(recv_data[i], 8, 16, QChar('0'));
+        //     }
+        //     if(m_value * 6 > 10) {
             //         data_str += "...";
             //     }
             //     emit logMessage(QString("第 %1 次接收到数据: %2")
             //         .arg(count)
             //         .arg(data_str));
             // }
-            // 每10000次打印一次数据和循环时间
-            if(count % 10000 == 0 || count < 1000) {
-                unsigned int* recv_data = (unsigned int*)(m_pcie->fifo_buffer + m_pcie->current_buffer_pos);
-                QString data_str;
-                for(int i = 0; i < m_value * 6 ; i++) {
+        // 每10000次打印一次数据和循环时间
+        if(count % 10000 == 0 || count < 1000) {
+            unsigned int* recv_data = (unsigned int*)(fifo_buffer + current_buffer_pos);
+            QString data_str;
+            for(int i = 0; i < input_value * 6 ; i++) {
                     data_str += QString("0x%1 ").arg(recv_data[i], 8, 16, QChar('0'));
                 }
-                emit logMessage(QString("第 %1 次接收到数据: %2")
-                    .arg(count)
-                    .arg(data_str));
-            }
-            // 更新写入位置和包大小信息
-            m_pcie->last_package_size = recv_size;
-            m_pcie->has_new_data = true;
-            m_pcie->current_buffer_pos += recv_size;
+            emit logMessage(QString("第 %1 次接收到数据: %2")
+                .arg(count)
+                .arg(data_str));
+        }
+        // 更新写入位置和包大小信息
+        last_package_size = recv_size;
+        has_new_data = true;
+        current_buffer_pos += recv_size;
 
-            // 等待指定时间
-            QElapsedTimer waitTimer;
-            waitTimer.start();
-            while(waitTimer.nsecsElapsed() < 10000 * m_value - 4 * 10000) {
-                QThread::yieldCurrentThread();
-            }
+        // 使用 Windows API 实现精确延时
+        LARGE_INTEGER frequency;        
+        LARGE_INTEGER start;
+        LARGE_INTEGER current;
+        
+        QueryPerformanceFrequency(&frequency);
+        QueryPerformanceCounter(&start);
+        
+        // 计算目标时间（10000 * value - 4 * 10000 纳秒）
+        double target_microseconds = (10000.0 * input_value - 4.0 * 10000.0) / 1000.0;
+        
+        do {
+            QueryPerformanceCounter(&current);
+            double elapsed = (current.QuadPart - start.QuadPart) * 1000000.0 / frequency.QuadPart;
+            if (elapsed >= target_microseconds) break;
             
-            // 发送继续命令
-            m_pcie->pcie_Send_Buffer[0] = 0x0000023c;
-            m_pcie->pcie_Send_Buffer[1] = 0x3e000000;
-            sent = fpga_send(m_pcie->fpga, m_pcie->fpga_pcie_chnl, 
-                           m_pcie->pcie_Send_Buffer, 2, 0, 1, 25000);
+            Sleep(0);  // 让出CPU时间片，但不使用Qt的线程功能
+        } while (true);
             
-            // // 等待指定时间
-            // QElapsedTimer waitTimer;
-            // waitTimer.start();
+        // 发送继续命令
+        pcie_Send_Buffer[0] = 0x0000023c;
+        pcie_Send_Buffer[1] = 0x3e000000;
+        sent = fpga_send(fpga, fpga_pcie_chnl, pcie_Send_Buffer, 2, 0, 1, 25000);
+            
+        // // 等待指定时间
+        // QElapsedTimer waitTimer;
+        // waitTimer.start();
             // while(waitTimer.nsecsElapsed() < 10000 * m_value - 4 * 10000) {
             //     QThread::yieldCurrentThread();
             // }
 
-            qint64 loopTime = loopTimer.nsecsElapsed() / 1000; // 转换为微秒
-            // 每10000次记录一次位置信息
-            if(count % 10000 == 0 || count < 1000) {
-                emit operationCompleted(m_pcie->current_buffer_pos, 
-                                     m_pcie->m_loopTimer.nsecsElapsed() / 1000);
-                
-                emit logMessage(QString("缓冲区状态 - 当前位置: %1 MB, 总大小: %2 MB, 剩余空间: %3 MB, 未读包数: %4，本次循环耗时: %5 微秒")
-                    .arg(m_pcie->current_buffer_pos / (1024 * 1024))
-                    .arg(m_pcie->buffer_size / (1024 * 1024))
-                    .arg((m_pcie->buffer_size - m_pcie->current_buffer_pos) / (1024 * 1024))
-                    .arg(m_pcie->package_counter)
-                    .arg(loopTime));
-            }
-
-        } 
-        else {
-            emit logMessage("FPGA接收失败");
-            break;
+        qint64 loopTime = loopTimer.nsecsElapsed() / 1000; // 转换为微秒
+        // 每10000次记录一次位置信息
+        if(count % 10000 == 0 || count < 1000) {
+            emit logGenerated(QString("缓冲区状态 - 当前位置: %1 MB, 总大小: %2 MB, 剩余空间: %3 MB, 未读包数: %4，本次循环耗时: %5 微秒")
+                .arg(current_buffer_pos / (1024 * 1024))
+                .arg(buffer_size / (1024 * 1024))
+                .arg((buffer_size - current_buffer_pos) / (1024 * 1024))
+                .arg(package_counter)
+                .arg(loopTime));
         }
+    } else {
+        emit logMessage("FPGA接收失败");
     }
-    
-    emit logMessage("FIFO线程结束");
 }
 
 bool Pice_dll::fpga_read(unsigned int* read_buffer, int timeout_ms)
@@ -553,83 +536,72 @@ Pice_dll::VersionInfo Pice_dll::getVersionInfo()
     return info;
 }
 
-void Pice_dll::setFifoEnabled(bool enabled) {
-    if (!enabled && fifo_thread) {
-        fifo_thread->stop();  // 停止FIFO线程
-        fifo_thread->wait();
-        delete fifo_thread;
-        fifo_thread = nullptr;
-    }
-}
+// void Pice_dll::setFifoEnabled(bool enabled) {
+//     if (!enabled && fifo_thread) {
+//         fifo_thread->stop();  // 停止FIFO线程
+//         fifo_thread->wait();
+//         delete fifo_thread;
+//         fifo_thread = nullptr;
+//     }
+// }
 
 // 在文件开头添加导出函数声明
 extern "C" {
-    __declspec(dllexport) void* CreatePiceDll();
-    __declspec(dllexport) void DestroyPiceDll(void* instance);
-    __declspec(dllexport) int CheckPcie(void* instance);
-    __declspec(dllexport) int OpenPcie(void* instance);
-    __declspec(dllexport) void ClosePcie(void* instance);
-    __declspec(dllexport) bool FpgaFifo(void* instance, int value);
-    __declspec(dllexport) bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms);
-    __declspec(dllexport) const char* GetPiceDllError(void* instance);
-    __declspec(dllexport) bool IsConnected(void* instance);
-    __declspec(dllexport) size_t GetCurrentFifoPos(void* instance);
-    __declspec(dllexport) size_t GetNextReadPos(void* instance);
-    __declspec(dllexport) void EnableRiffaLog(bool enable);
-    __declspec(dllexport) void EnablePiceDllLog(bool enable);
-}
+    PICE_DLL_EXPORT void* CreatePiceDll() {
+        return new Pice_dll();
+    }
 
-// 在文件末尾添加导出函数实现
-void* CreatePiceDll() {
-    return new Pice_dll();
-}
+    PICE_DLL_EXPORT void DestroyPiceDll(void* instance) {
+        delete static_cast<Pice_dll*>(instance);
+    }
 
-void DestroyPiceDll(void* instance) {
-    delete static_cast<Pice_dll*>(instance);
-}
+    PICE_DLL_EXPORT int CheckPcie(void* instance) {
+        return static_cast<Pice_dll*>(instance)->checkPcie();
+    }
 
-int CheckPcie(void* instance) {
-    return static_cast<Pice_dll*>(instance)->checkPcie();
-}
+    PICE_DLL_EXPORT int OpenPcie(void* instance) {
+        return static_cast<Pice_dll*>(instance)->openPcie();
+    }
 
-int OpenPcie(void* instance) {
-    return static_cast<Pice_dll*>(instance)->openPcie();
-}
+    PICE_DLL_EXPORT void ClosePcie(void* instance) {
+        static_cast<Pice_dll*>(instance)->closePcie();
+    }
 
-void ClosePcie(void* instance) {
-    static_cast<Pice_dll*>(instance)->closePcie();
-}
+    PICE_DLL_EXPORT bool FpgaFifoStart(void* instance, int value) {
+        return static_cast<Pice_dll*>(instance)->fpga_fifo_start(value);
+    }
 
-bool FpgaFifo(void* instance, int value) {
-    return static_cast<Pice_dll*>(instance)->fpga_fifo(value);
-}
+    PICE_DLL_EXPORT void FpgaFifoOnce(void* instance) {
+        static_cast<Pice_dll*>(instance)->fpga_fifo_once();
+    }
 
-bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms) {
-    return static_cast<Pice_dll*>(instance)->fpga_read(buffer, timeout_ms);
-}
+    PICE_DLL_EXPORT bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms) {
+        return static_cast<Pice_dll*>(instance)->fpga_read(buffer, timeout_ms);
+    }
 
-const char* GetPiceDllError(void* instance) {
-    static std::string error;
-    error = static_cast<Pice_dll*>(instance)->getLastError().toStdString();
-    return error.c_str();
-}
+    PICE_DLL_EXPORT const char* GetPiceDllError(void* instance) {
+        static std::string error;
+        error = static_cast<Pice_dll*>(instance)->getLastError().toStdString();
+        return error.c_str();
+    }
 
-bool IsConnected(void* instance) {
-    return static_cast<Pice_dll*>(instance)->isConnected();
-}
+    PICE_DLL_EXPORT bool IsConnected(void* instance) {
+        return static_cast<Pice_dll*>(instance)->isConnected();
+    }
 
-size_t GetCurrentFifoPos(void* instance) {
-    return static_cast<Pice_dll*>(instance)->getCurrentFifoPos();
-}
+    PICE_DLL_EXPORT size_t GetCurrentFifoPos(void* instance) {
+        return static_cast<Pice_dll*>(instance)->getCurrentFifoPos();
+    }
 
-size_t GetNextReadPos(void* instance) {
-    return static_cast<Pice_dll*>(instance)->getNextReadPos();
-}
+    PICE_DLL_EXPORT size_t GetNextReadPos(void* instance) {
+        return static_cast<Pice_dll*>(instance)->getNextReadPos();
+    }
 
-void EnableRiffaLog(bool enable) {
-    Pice_dll::enableRiffaLog(enable);
-}
+    PICE_DLL_EXPORT void EnableRiffaLog(bool enable) {
+        Pice_dll::enableRiffaLog(enable);
+    }
 
-void EnablePiceDllLog(bool enable) {
-    Pice_dll::enablePiceDllLog(enable);
+    PICE_DLL_EXPORT void EnablePiceDllLog(bool enable) {
+        Pice_dll::enablePiceDllLog(enable);
+    }
 }
