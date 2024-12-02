@@ -51,7 +51,7 @@
       <item>
        <widget class="QPushButton" name="btnToggleFifo">
         <property name="text">
-         <string>关闭线程</string>
+         <string>禁用FIFO</string>
         </property>
        </widget>
       </item>

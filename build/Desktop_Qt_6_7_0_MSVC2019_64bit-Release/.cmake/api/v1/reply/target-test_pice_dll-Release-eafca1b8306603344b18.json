@@ -338,15 +338,15 @@
 	"dependencies" : 
 	[
 		{
-			"backtrace" : 0,
-			"id" : "test_pice_dll_autogen::@6890427a1f51a3e7e1df"
-		},
-		{
 			"id" : "test_pice_dll_autogen_timestamp_deps::@6890427a1f51a3e7e1df"
 		},
 		{
 			"backtrace" : 2,
 			"id" : "pice_dll::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 0,
+			"id" : "test_pice_dll_autogen::@6890427a1f51a3e7e1df"
 		}
 	],
 	"id" : "test_pice_dll::@6890427a1f51a3e7e1df",

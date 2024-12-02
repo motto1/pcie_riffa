@@ -10,12 +10,21 @@
 4. 版本信息查询
 5. 详细的日志记录系统
 
-## 类说明
+## 详细API说明
 
-### Pice_dll 类
-主要的设备操作类，继承自QObject。
+### 1. 基础设备操作
 
-#### 公共函数
+#### `int checkPcie()`
+- 功能：检查系统中可用的PCIE设备
+- 返回值：找到的设备数量
+- 使用示例：
+```cpp
+Pice_dll* pcie = new Pice_dll();
+int devices = pcie->checkPcie();
+if (devices > 0) {
+    qDebug() << "找到" << devices << "个PCIE设备";
+}
+```
 
 ##### 基础设备操作
 1. `int checkPcie()`

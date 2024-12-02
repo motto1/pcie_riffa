@@ -8,6 +8,29 @@
 #include <QElapsedTimer>
 #include <QThread>
 
+// 添加导出函数声明
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+PICE_DLL_EXPORT void* CreatePiceDll();
+PICE_DLL_EXPORT void DestroyPiceDll(void* instance);
+PICE_DLL_EXPORT int CheckPcie(void* instance);
+PICE_DLL_EXPORT int OpenPcie(void* instance);
+PICE_DLL_EXPORT void ClosePcie(void* instance);
+PICE_DLL_EXPORT bool FpgaFifo(void* instance, int value);
+PICE_DLL_EXPORT bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms);
+PICE_DLL_EXPORT const char* GetPiceDllError(void* instance);
+PICE_DLL_EXPORT bool IsConnected(void* instance);
+PICE_DLL_EXPORT size_t GetCurrentFifoPos(void* instance);
+PICE_DLL_EXPORT size_t GetNextReadPos(void* instance);
+PICE_DLL_EXPORT void EnableRiffaLog(bool enable);
+PICE_DLL_EXPORT void EnablePiceDllLog(bool enable);
+
+#ifdef __cplusplus
+}
+#endif
+
 // 前向声明
 class Pice_dll;
 
@@ -88,6 +111,19 @@ public:
     
 signals:
     void logGenerated(const QString& message);
+
+    // 添加友元声��，允许导出函数访问私有成员
+    friend PICE_DLL_EXPORT void* CreatePiceDll();
+    friend PICE_DLL_EXPORT void DestroyPiceDll(void* instance);
+    friend PICE_DLL_EXPORT int CheckPcie(void* instance);
+    friend PICE_DLL_EXPORT int OpenPcie(void* instance);
+    friend PICE_DLL_EXPORT void ClosePcie(void* instance);
+    friend PICE_DLL_EXPORT bool FpgaFifo(void* instance, int value);
+    friend PICE_DLL_EXPORT bool FpgaRead(void* instance, unsigned int* buffer, int timeout_ms);
+    friend PICE_DLL_EXPORT const char* GetPiceDllError(void* instance);
+    friend PICE_DLL_EXPORT bool IsConnected(void* instance);
+    friend PICE_DLL_EXPORT size_t GetCurrentFifoPos(void* instance);
+    friend PICE_DLL_EXPORT size_t GetNextReadPos(void* instance);
 
 private:
     static Pice_dll* instance;  // 添加静态成员变量

@@ -9,6 +9,7 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "exception": "cpp"
+        "exception": "cpp",
+        "algorithm": "cpp"
     }
 }

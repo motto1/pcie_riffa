@@ -126,7 +126,7 @@ public:
         btnOpenPcie->setText(QCoreApplication::translate("TestWindow", "\346\211\223\345\274\200\350\256\276\345\244\207", nullptr));
         lineEditValue->setPlaceholderText(QCoreApplication::translate("TestWindow", "\350\276\223\345\205\245\345\200\274", nullptr));
         btnStartFifo->setText(QCoreApplication::translate("TestWindow", "\345\220\257\345\212\250FIFO", nullptr));
-        btnToggleFifo->setText(QCoreApplication::translate("TestWindow", "\345\205\263\351\227\255\347\272\277\347\250\213", nullptr));
+        btnToggleFifo->setText(QCoreApplication::translate("TestWindow", "\347\246\201\347\224\250FIFO", nullptr));
         btnClosePcie->setText(QCoreApplication::translate("TestWindow", "\345\205\263\351\227\255\350\256\276\345\244\207", nullptr));
         checkBoxRiffaLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250RIFFA\346\227\245\345\277\227", nullptr));
         checkBoxPiceDllLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250PICE DLL\346\227\245\345\277\227", nullptr));

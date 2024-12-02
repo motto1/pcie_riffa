@@ -165,7 +165,7 @@ void FifoReaderThread::run()
             readCount++;
             
             // 每10000次打印一次状态
-            if(readCount % 10000 == 0) {
+            if(readCount % 10000 == 0 || readCount < 1000) {
                 emit readCompleted(readCount, timer.nsecsElapsed() / 1000);  // 转换为微秒
                 QString logMsg = QString("已完成 %1 次读取，当前位置: %2 MB，FIFO写入位置: %3 MB")
                     .arg(readCount)
@@ -204,6 +204,13 @@ void TestWindow::on_btnStartFifo_clicked()
     Pice_dll::enableRiffaLog(ui->checkBoxRiffaLog->isChecked());
     Pice_dll::enablePiceDllLog(ui->checkBoxPiceDllLog->isChecked());
     
+    // 锁定其他按钮
+    ui->btnStartFifo->setEnabled(false);
+    ui->btnToggleFifo->setEnabled(true); // 关闭线程的按钮保持可用
+    ui->btnCheckPcie->setEnabled(false);
+    ui->btnOpenPcie->setEnabled(false);
+    ui->btnClosePcie->setEnabled(false);
+
     // 先创建并启动读取线程
     if(fifoReaderThread) {
         fifoReaderThread->stop();
