@@ -95,7 +95,7 @@ fpga_t * RIFFACALL fpga_open(int id) {
 void RIFFACALL fpga_close(fpga_t * fpga) {
     // Validate the device handle
     if (fpga->dev == NULL || fpga->dev == INVALID_HANDLE_VALUE) {
-        printf("Invalid fpga_t device handle\n");
+        // printf("Invalid fpga_t device handle\n");
         return;
     }
 
@@ -130,11 +130,11 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
 
     // 2. 记录发送操作开始的日志
     logStr = "开始FPGA发送操作 - 通道: " + std::to_string(chnl) + ", 长度: " + std::to_string(len) + ", 超时: " + std::to_string(timeout) + "ms";
-    logMessage(logStr);
+    // logMessage(logStr);
 
     // 3. 验证FPGA设备句柄是否有效
     if (fpga->dev == NULL || fpga->dev == INVALID_HANDLE_VALUE) {
-        logMessage("无效的FPGA设备句柄");
+        // logMessage("无效的FPGA设备句柄");
         return 0;
     }
 
@@ -142,7 +142,7 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
     evt = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (evt == NULL) {
         logStr = "创建事件失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         return 0;
     }
 
@@ -159,7 +159,7 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
 
     // 7. 执行设备IO控制，发送数据
     logStr = "执行DeviceIoControl发送数据...";
-    logMessage(logStr);
+    // logMessage(logStr);
     status = DeviceIoControl(
         fpga->dev,                    // 设备句柄
         IOCTL_RIFFA_SEND,            // IO控制码
@@ -176,23 +176,23 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
         if (GetLastError() == ERROR_IO_PENDING) {
             // 8.1 IO操作正在进行中
             logStr = "DeviceIoControl: IO_PENDING, 等待操作完成...";
-            logMessage(logStr);
+            // logMessage(logStr);
             WaitForSingleObject(evt, INFINITE);  // 等待IO完成
             // 获取IO操作结果
             status = GetOverlappedResult(fpga->dev, &overlapStruct, &wordsReturned, FALSE);
             if (!status) {
                 if (GetLastError() == ERROR_OPERATION_ABORTED) {
                     logStr = "操作超时或被中止";
-                    logMessage(logStr);
+                    // logMessage(logStr);
                 } else {
                     logStr = "GetOverlappedResult失败, 错误码: " + std::to_string(GetLastError());
-                    logMessage(logStr);
+                    // logMessage(logStr);
                 }
             }
         } else {
             // 8.2 IO操作直接失败
             logStr = "DeviceIoControl失败, 错误码: " + std::to_string(GetLastError());
-            logMessage(logStr);
+            // logMessage(logStr);
         }
     }
 
@@ -201,7 +201,7 @@ int RIFFACALL fpga_send(fpga_t * fpga, int chnl, void * data, int len,
 
     // 10. 记录完成日志
     logStr = "FPGA发送操作完成 - 返回字节数: " + std::to_string(wordsReturned);
-    logMessage(logStr);
+    // logMessage(logStr);
 
     // 11. 返回实际传输的字数
     return wordsReturned;
@@ -218,11 +218,11 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
 
     // 记录接收操作的开始
     logStr = "开始FPGA接收操作 - 通道: " + std::to_string(chnl) + ", 长度: " + std::to_string(len) + ", 超时: " + std::to_string(timeout) + "ms";
-    logMessage(logStr);
+    // logMessage(logStr);
 
     // Validate the device handle
     if (fpga->dev == NULL || fpga->dev == INVALID_HANDLE_VALUE) {
-        logMessage("无效的FPGA设备句柄");
+        // logMessage("无效的FPGA设备句柄");
         return 0;
     }
 
@@ -230,7 +230,7 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     evt = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (evt == NULL) {
         logStr = "创建事件失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         return 0;
     }
 
@@ -245,27 +245,27 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
 
     // Receive the data
     logStr = "执行DeviceIoControl接收数据...";
-    logMessage(logStr);
+    // logMessage(logStr);
     status = DeviceIoControl(fpga->dev, IOCTL_RIFFA_RECV, (LPVOID)&io,
                             sizeof(io), data, (len<<2), &wordsReturned, &overlapStruct);
     if (!status) {
         if (GetLastError() == ERROR_IO_PENDING) {
             logStr = "DeviceIoControl: IO_PENDING, 等待操作完成...";
-            logMessage(logStr);
+            // logMessage(logStr);
             WaitForSingleObject(evt, INFINITE);
             status = GetOverlappedResult(fpga->dev, &overlapStruct, &wordsReturned, FALSE);
             if (!status) {
                 if (GetLastError() == ERROR_OPERATION_ABORTED) {
                     logStr = "操作超时或被中止";
-                    logMessage(logStr);
+                    // logMessage(logStr);
                 } else {
                     logStr = "GetOverlappedResult失败, 错误码: " + std::to_string(GetLastError());
-                    logMessage(logStr);
+                    // logMessage(logStr);
                 }
             }
         } else {
             logStr = "DeviceIoControl失败, 错误码: " + std::to_string(GetLastError());
-            logMessage(logStr);
+            // logMessage(logStr);
         }
     }
 
@@ -273,7 +273,7 @@ int RIFFACALL fpga_recv(fpga_t * fpga, int chnl, void * data, int len,
     CloseHandle(evt);
 
     logStr = "FPGA接收操作完成 - 返回字节数: " + std::to_string(wordsReturned);
-    logMessage(logStr);
+    // logMessage(logStr);
 
     return wordsReturned;
 }
@@ -285,7 +285,7 @@ void RIFFACALL fpga_reset(fpga_t * fpga) {
 
     // Validate the device handle
     if (fpga->dev == NULL || fpga->dev == INVALID_HANDLE_VALUE) {
-        printf("Invalid fpga_t device handle\n");
+        // printf("Invalid fpga_t device handle\n");
         return;
     }
 
@@ -300,10 +300,11 @@ void RIFFACALL fpga_reset(fpga_t * fpga) {
             status = GetOverlappedResult(fpga->dev, &overlapStruct,
                                          &wordsReturned, TRUE);
             if(!status)
-                printf("Error in GetOverlappedResult: %d\n", GetLastError());
+                {// printf("Error in GetOverlappedResult: %d\n", GetLastError());
+            }
         }
         else {
-            printf("Error in DeviceIoControl: %d\n", GetLastError());
+            // printf("Error in DeviceIoControl: %d\n", GetLastError());
         }
     }
 }
@@ -336,12 +337,12 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
 
     // 获取设备信息
     logStr = "开始获取设备信息...";
-    logMessage(logStr);
+    // logMessage(logStr);
     devInfo = SetupDiGetClassDevs(&GUID_RIFFA_INTERFACE, NULL, NULL,
                                  DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
     if (devInfo == INVALID_HANDLE_VALUE) {
         logStr = "SetupDiGetClassDevs失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         return INVALID_HANDLE_VALUE;
     }
 
@@ -351,12 +352,12 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
 
     // 枚举设备接口
     logStr = "尝试枚举设备接口, index: " + std::to_string(index);
-    logMessage(logStr);
+    // logMessage(logStr);
     status = SetupDiEnumDeviceInterfaces(devInfo, NULL, (LPGUID)&GUID_RIFFA_INTERFACE,
                                         index, &devIntfData);
     if (!status) {
         logStr = "SetupDiEnumDeviceInterfaces失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
     }
@@ -365,7 +366,7 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     SetupDiGetDeviceInterfaceDetail(devInfo, &devIntfData, NULL, 0, &size, NULL);
     if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
         logStr = "获取接口详细信息大小失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
     }
@@ -374,7 +375,7 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     devIntfDetail = (PSP_DEVICE_INTERFACE_DETAIL_DATA)malloc(size);
     if (!devIntfDetail) {
         logStr = "内存分配失败";
-        logMessage(logStr);
+        // logMessage(logStr);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
     }
@@ -385,7 +386,7 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
                                             size, NULL, &devInfoData);
     if (!status) {
         logStr = "获取接口详细信息失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
         free(devIntfDetail);
         SetupDiDestroyDeviceInfoList(devInfo);
         return INVALID_HANDLE_VALUE;
@@ -402,17 +403,17 @@ HANDLE get_device(UINT32 index, BOOLEAN overlapped) {
     
     logStr = "尝试打开设备路径: " + 
         std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(devIntfDetail->DevicePath);
-    logMessage(logStr);
+    // logMessage(logStr);
     
     dev = CreateFile(devIntfDetail->DevicePath, GENERIC_READ|GENERIC_WRITE,
                     FILE_SHARE_READ | FILE_SHARE_WRITE, &secAttr, OPEN_EXISTING, flags, NULL);
     
     if (dev == INVALID_HANDLE_VALUE) {
         logStr = "CreateFile失败, 错误码: " + std::to_string(GetLastError());
-        logMessage(logStr);
+        // logMessage(logStr);
     } else {
         logStr = "设备打开成功";
-        logMessage(logStr);
+        // logMessage(logStr);
     }
 
     // 清理
@@ -441,7 +442,7 @@ DWORD fill_device_info(fpga_info_list * info) {
     devInfo = SetupDiGetClassDevs(&GUID_RIFFA_INTERFACE, NULL, NULL,
                                   DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
     if (devInfo == INVALID_HANDLE_VALUE) {
-        printf("SetupDiGetClassDevs failed, Error: %d\n", GetLastError());
+        // printf("SetupDiGetClassDevs failed, Error: %d\n", GetLastError());
         return GetLastError();
     }
 
@@ -456,7 +457,7 @@ DWORD fill_device_info(fpga_info_list * info) {
         // Determine the size required for the devIntfData
         SetupDiGetDeviceInterfaceDetail(devInfo, &devIntfData, NULL, 0, &size, NULL);
         if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            printf("SetupDiGetDeviceInterfaceDetail failed, Error: %d\n", GetLastError());
+            // printf("SetupDiGetDeviceInterfaceDetail failed, Error: %d\n", GetLastError());
             SetupDiDestroyDeviceInfoList(devInfo);
             return GetLastError();
         }
@@ -464,7 +465,7 @@ DWORD fill_device_info(fpga_info_list * info) {
         // Create the SP_DEVICE_INTERFACE_DETAIL_DATA
         devIntfDetail = (PSP_DEVICE_INTERFACE_DETAIL_DATA)malloc(size);
         if (!devIntfDetail) {
-            printf("Insufficient memory.\n");
+            // printf("Insufficient memory.\n");
             SetupDiDestroyDeviceInfoList(devInfo);
             return ERROR_NOT_ENOUGH_MEMORY;
         }
@@ -474,7 +475,7 @@ DWORD fill_device_info(fpga_info_list * info) {
         status = SetupDiGetDeviceInterfaceDetail(devInfo, &devIntfData, devIntfDetail,
                                                  size, NULL, &devInfoData);
         if (!status) {
-            printf("SetupDiGetDeviceInterfaceDetail failed, Error: %d\n", GetLastError());
+            // printf("SetupDiGetDeviceInterfaceDetail failed, Error: %d\n", GetLastError());
             free(devIntfDetail);
             SetupDiDestroyDeviceInfoList(devInfo);
             return GetLastError();
@@ -484,7 +485,7 @@ DWORD fill_device_info(fpga_info_list * info) {
         dev = CreateFile(devIntfDetail->DevicePath, GENERIC_READ|GENERIC_WRITE,
                          FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
         if (dev == INVALID_HANDLE_VALUE) {
-            printf("CreateFile failed.  Error:%d\n", GetLastError());
+            // printf("CreateFile failed.  Error:%d\n", GetLastError());
             free(devIntfDetail);
             SetupDiDestroyDeviceInfoList(devInfo);
             return GetLastError();
@@ -494,7 +495,7 @@ DWORD fill_device_info(fpga_info_list * info) {
         status = DeviceIoControl(dev, IOCTL_RIFFA_LIST, (LPVOID)&i, sizeof(i),
                                  (LPVOID)info, sizeof(*info), &wordsReturned, NULL);
         if (!status) {
-            printf("Error in DeviceIoControl: %d\n", GetLastError());
+            // printf("Error in DeviceIoControl: %d\n", GetLastError());
             CloseHandle(dev);
             free(devIntfDetail);
             SetupDiDestroyDeviceInfoList(devInfo);
@@ -514,6 +515,23 @@ DWORD fill_device_info(fpga_info_list * info) {
     SetupDiDestroyDeviceInfoList(devInfo);
 
     return 0;
+}
+
+// 修改日志级别定义
+enum LogLevel {
+    LOG_ERROR,    // 错误信息
+    LOG_WARNING,  // 警告信息
+    LOG_INFO,     // 普通信息
+    LOG_DEBUG     // 调试信息
+};
+
+static bool enable_riffa_log = false;
+static LogLevel current_log_level = LOG_ERROR;  // 只输出错误信息
+
+#define RIFFA_LOG(fmt, ...) do {} while(0)
+
+void setRiffaLogEnabled(bool enabled) {
+    // enable_riffa_log = enabled;
 }
 
 

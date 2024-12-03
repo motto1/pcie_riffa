@@ -48,6 +48,17 @@ TestWindow::TestWindow(QWidget *parent)
     connect(ui->checkBoxPiceDllLog, &QCheckBox::toggled, this, [this](bool checked) {
         EnablePiceDllLog(checked);
     });
+
+    // 连接新的日志控制复选框
+    connect(ui->checkBoxLogToFile, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!checked && logFile) {
+            // 如果禁用日志文件，关闭当前日志文件
+            closeLogFile();
+        } else if (checked && !logFile) {
+            // 如果启用日志文件，重新创建日志文件
+            initLogFile();
+        }
+    });
 }
 
 TestWindow::~TestWindow()
@@ -116,8 +127,15 @@ void TestWindow::writeToLogFile(const QString& text)
 
 void TestWindow::appendLog(const QString& text)
 {
-    ui->textLog->append(text);
-    writeToLogFile(text);
+    // 根据复选框状态决定是否写入文本框
+    if (ui->checkBoxLogToTextBox->isChecked()) {
+        ui->textLog->append(text);
+    }
+    
+    // 根据复选框状态决定是否写入日志文件
+    if (ui->checkBoxLogToFile->isChecked()) {
+        writeToLogFile(text);
+    }
 }
 void TestWindow::on_btnCheckPcie_clicked()
 {
@@ -238,6 +256,7 @@ void TestWindow::onFifoReadCompleted(qint64 count, qint64 time)
 
 void TestWindow::on_btnToggleFifo_clicked()
 {
+    // 停止FIFO读取线程
     if (fifoReaderThread) {
         fifoReaderThread->stop();
         fifoReaderThread->wait();
@@ -245,5 +264,23 @@ void TestWindow::on_btnToggleFifo_clicked()
         fifoReaderThread = nullptr;
         appendLog("已停止FIFO读取线程");
     }
+
+    // 停止所有FIFO写入线程
+    for (QThread* thread : this->findChildren<QThread*>()) {
+        if (thread->objectName().contains("fifoWriteThread")) {
+            thread->quit();
+            thread->wait();
+            thread->deleteLater();
+        }
+    }
+    appendLog("已停止FIFO写入线程");
+
+    // 启用相关按钮
+    ui->btnStartFifo->setEnabled(true);
+    ui->btnToggleFifo->setEnabled(true);
+    ui->btnCheckPcie->setEnabled(true);
+    ui->btnOpenPcie->setEnabled(true);
+    ui->btnClosePcie->setEnabled(true);
+    appendLog("已重新启用所有操作按钮");
 }
 

@@ -38,6 +38,8 @@ public:
     QHBoxLayout *horizontalLayout_2;
     QCheckBox *checkBoxRiffaLog;
     QCheckBox *checkBoxPiceDllLog;
+    QCheckBox *checkBoxLogToFile;
+    QCheckBox *checkBoxLogToTextBox;
     QTextEdit *textLog;
     QStatusBar *statusbar;
 
@@ -100,6 +102,18 @@ public:
 
         horizontalLayout_2->addWidget(checkBoxPiceDllLog);
 
+        checkBoxLogToFile = new QCheckBox(centralwidget);
+        checkBoxLogToFile->setObjectName("checkBoxLogToFile");
+        checkBoxLogToFile->setChecked(true);
+
+        horizontalLayout_2->addWidget(checkBoxLogToFile);
+
+        checkBoxLogToTextBox = new QCheckBox(centralwidget);
+        checkBoxLogToTextBox->setObjectName("checkBoxLogToTextBox");
+        checkBoxLogToTextBox->setChecked(true);
+
+        horizontalLayout_2->addWidget(checkBoxLogToTextBox);
+
 
         verticalLayout->addLayout(horizontalLayout_2);
 
@@ -130,6 +144,8 @@ public:
         btnClosePcie->setText(QCoreApplication::translate("TestWindow", "\345\205\263\351\227\255\350\256\276\345\244\207", nullptr));
         checkBoxRiffaLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250RIFFA\346\227\245\345\277\227", nullptr));
         checkBoxPiceDllLog->setText(QCoreApplication::translate("TestWindow", "\345\220\257\347\224\250PICE DLL\346\227\245\345\277\227", nullptr));
+        checkBoxLogToFile->setText(QCoreApplication::translate("TestWindow", "\345\206\231\345\205\245\346\227\245\345\277\227\346\226\207\344\273\266", nullptr));
+        checkBoxLogToTextBox->setText(QCoreApplication::translate("TestWindow", "\346\230\276\347\244\272\345\210\260\346\226\207\346\234\254\346\241\206", nullptr));
     } // retranslateUi
 
 };

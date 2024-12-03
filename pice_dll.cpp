@@ -281,20 +281,10 @@ void Pice_dll::fpga_fifo_once()
 {
     std::stringstream logMsg;
     
-    // 检查连接状态
-    if (!isConnected()) {
-        handleLog("设备未连接，停止FIFO操作");
-        return;
-    }
-
-    if (sent == 0) {
-        handleLog("FPGA发送失败");
-        return;
-    }
-
-    // 开始计时
-    resetTimer();
-
+    // 重置计时器
+    LARGE_INTEGER start_loop;
+    QueryPerformanceCounter(&start_loop);
+    
     // 计算本次接收数据的大小
     size_t recv_size = input_value * 6 * sizeof(unsigned int);
     
@@ -331,10 +321,18 @@ void Pice_dll::fpga_fifo_once()
             return;
         }
 
+
+
         // 每10000次打印一次数据
-        if(count % 10000 == 0 || count < 1000) {
+        //  if(count % 10000 == 0 || count < 1000) {
+        if(true) {
             logMsg.str("");
             logMsg << "第 " << count << " 次接收到数据: ";
+            logMsg << "fifo_buffer地址: 0x" << std::hex << (void*)fifo_buffer 
+                  << ", 当前写入位置: 0x" << std::hex << current_buffer_pos 
+                  << ", 本次数据位置: 0x" << std::hex << (current_buffer_pos + recv_size) << std::endl;
+            
+            // 使用当前位置打印刚接收到的数据
             unsigned int* recv_data = (unsigned int*)(fifo_buffer + current_buffer_pos);
             for(int i = 0; i < input_value * 6; i++) {
                 logMsg << "0x" << std::hex << std::setfill('0') << std::setw(8) 
@@ -343,29 +341,48 @@ void Pice_dll::fpga_fifo_once()
             handleLog(logMsg.str());
         }
 
-        // 更新写入位置和包大小信息
         last_package_size = recv_size;
         has_new_data = true;
+        // 更新写入位置（在记录数据之后）
         current_buffer_pos += recv_size;
 
-        // 等待指定时间
-        int target_micros = 10000 * input_value - 4 * 10000;
-        waitMicroseconds(target_micros);
+        // 使用 Windows API 实现精确延时
+        LARGE_INTEGER delay_start, delay_current;
+        QueryPerformanceCounter(&delay_start);
+        
+        // 计算目标时间（10000 * value - 4 * 10000 纳秒）
+        double target_microseconds = (10000.0 * input_value - 4.0 * 10000.0) / 1000.0;
+        
+        do {
+            QueryPerformanceCounter(&delay_current);
+            double elapsed = (delay_current.QuadPart - delay_start.QuadPart) * 1000000.0 / frequency.QuadPart;
+            if (elapsed >= target_microseconds) break;
+            
+            // Sleep(0);  // 让出CPU时间片
+        } while (true);
         
         // 发送继续命令
         pcie_Send_Buffer[0] = 0x0000023c;
         pcie_Send_Buffer[1] = 0x3e000000;
         sent = fpga_send(fpga, fpga_pcie_chnl, pcie_Send_Buffer, 2, 0, 1, 25000);
 
+        // 计算本次循环实际耗时
+        LARGE_INTEGER end_loop;
+        QueryPerformanceCounter(&end_loop);
+        int64_t loop_time = ((end_loop.QuadPart - start_loop.QuadPart) * 1000000) / frequency.QuadPart;
+
         // 记录循环时间和状态
-        int64_t loopTime = getElapsedMicros();
         if(count % 10000 == 0 || count < 1000) {
             logMsg.str("");
-            logMsg << "缓冲区状态 - 当前位置: " << (current_buffer_pos / (1024 * 1024))
-                  << " MB, 总大小: " << (buffer_size / (1024 * 1024))
-                  << " MB, 剩余空间: " << ((buffer_size - current_buffer_pos) / (1024 * 1024))
-                  << " MB, 未读包数: " << package_counter
-                  << "，本次循环耗时: " << loopTime << " 微秒";
+            logMsg << std::dec 
+                   << "缓冲区状态 - 当前位置: " << current_buffer_pos  // 先打印原始字节数
+                   << " bytes (" << (current_buffer_pos / (1024.0 * 1024.0)) << " MB)"  // 转换为MB并保留小数
+                   << ", 总大小: " << buffer_size 
+                   << " bytes (" << (buffer_size / (1024.0 * 1024.0)) << " MB)"
+                   << ", 剩余空间: " << (buffer_size - current_buffer_pos)
+                   << " bytes (" << ((buffer_size - current_buffer_pos) / (1024.0 * 1024.0)) << " MB)"
+                   << ", 未读包数: " << package_counter
+                   << "，本次循环耗时: " << loop_time << " 微秒";
             handleLog(logMsg.str());
         }
     } else {
@@ -444,9 +461,10 @@ bool Pice_dll::fpga_read(unsigned int* read_buffer, int timeout_ms)
     package_counter--;
 
     // 每10000次读取打印一次读取操作信息
-    if(read_count % 10000 == 0 || read_count < 1000) {
+    // if(read_count % 10000 == 0 || read_count < 1000) {
+    if(true) {
         logMsg.str("");
-        logMsg << "从FIFO位置 " << (next_read_pos - last_package_size)
+        logMsg << std::dec << "从FIFO位置 " << (next_read_pos - last_package_size)
                << " 读取了 " << last_package_size
                << " 字节数据，剩余未读组数: " << package_counter;
         handleLog(logMsg.str());
